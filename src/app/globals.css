@@ -1,0 +1,217 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-arabic: var(--font-cairo);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* NIPPUR Brand Colors — Logo Blue #1E5BA8 */
+  --color-brand-50: #EFF4FB;
+  --color-brand-100: #D9E7F7;
+  --color-brand-200: #B3CFF0;
+  --color-brand-300: #7DAFE4;
+  --color-brand-400: #4A8FD6;
+  --color-brand-500: #2B73C4;
+  --color-brand-600: #1E5BA8;
+  --color-brand-700: #164A87;
+  --color-brand-800: #0F3765;
+  --color-brand-900: #0A2544;
+  --color-brand-950: #051325;
+
+  /* Gold Accent — Warm tones from factory lighting */
+  --color-gold-50: #FDF9EF;
+  --color-gold-100: #FAF0D4;
+  --color-gold-200: #F4E0A5;
+  --color-gold-300: #ECC96D;
+  --color-gold-400: #D4A843;
+  --color-gold-500: #C99A30;
+  --color-gold-600: #B07D1F;
+  --color-gold-700: #8E6219;
+
+  /* Legacy alias — pharma maps to brand */
+  --color-pharma-50: var(--color-brand-50);
+  --color-pharma-100: var(--color-brand-100);
+  --color-pharma-200: var(--color-brand-200);
+  --color-pharma-300: var(--color-brand-300);
+  --color-pharma-400: var(--color-brand-400);
+  --color-pharma-500: var(--color-brand-500);
+  --color-pharma-600: var(--color-brand-600);
+  --color-pharma-700: var(--color-brand-700);
+  --color-pharma-800: var(--color-brand-800);
+  --color-pharma-900: var(--color-brand-900);
+  --color-pharma-950: var(--color-brand-950);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #FAFBFD;
+  --foreground: #0A2544;
+  --card: #FFFFFF;
+  --card-foreground: #0A2544;
+  --popover: #FFFFFF;
+  --popover-foreground: #0A2544;
+  --primary: #1E5BA8;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EFF4FB;
+  --secondary-foreground: #164A87;
+  --muted: #F1F4F9;
+  --muted-foreground: #5A6B80;
+  --accent: #EFF4FB;
+  --accent-foreground: #164A87;
+  --destructive: #DC2626;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #1E5BA8;
+  --chart-1: #1E5BA8;
+  --chart-2: #4A8FD6;
+  --chart-3: #D4A843;
+  --chart-4: #7DAFE4;
+  --chart-5: #ECC96D;
+  --sidebar: #F8FAFC;
+  --sidebar-foreground: #0A2544;
+  --sidebar-primary: #1E5BA8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #EFF4FB;
+  --sidebar-accent-foreground: #164A87;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #1E5BA8;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Arabic font */
+[dir="rtl"] body,
+[dir="rtl"] {
+  font-family: var(--font-cairo), 'Cairo', sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F4F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #B3CFF0;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7DAFE4;
+}
+
+/* Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.80);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-dark {
+  background: rgba(5, 19, 37, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #1E5BA8, #4A8FD6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #D4A843, #ECC96D);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Pulse glow */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(30, 91, 168, 0.10); }
+  50% { box-shadow: 0 0 40px rgba(30, 91, 168, 0.20); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* RTL support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+/* Selection */
+::selection {
+  background: #1E5BA8;
+  color: white;
+}
+
+/* Focus visible */
+*:focus-visible {
+  outline: 2px solid #1E5BA8;
+  outline-offset: 2px;
+}

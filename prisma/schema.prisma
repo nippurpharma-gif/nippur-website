@@ -1,0 +1,80 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model NewsArticle {
+  id          Int      @id @default(autoincrement())
+  titleEn     String
+  titleAr     String
+  excerptEn   String
+  excerptAr   String
+  contentEn   String   @default("")
+  contentAr   String   @default("")
+  category    String   @default("General")
+  date        String
+  imageUrl    String   @default("")
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Application {
+  id          Int      @id @default(autoincrement())
+  fullName    String
+  email       String
+  phone       String
+  position    String
+  department  String
+  cvFileName  String   @default("")
+  cvFilePath  String   @default("")
+  coverLetter String   @default("")
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+}
+
+model Partner {
+  id          Int      @id @default(autoincrement())
+  nameEn      String
+  nameAr      String
+  description String   @default("")
+  logoUrl     String   @default("")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model JobPosition {
+  id              Int      @id @default(autoincrement())
+  titleEn         String
+  titleAr         String
+  departmentEn    String
+  departmentAr    String
+  location        String   @default("Baghdad")
+  type            String   @default("Full-time")
+  descriptionEn   String   @default("")
+  descriptionAr   String   @default("")
+  applicationEmail String  @default("")
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model SiteSettings {
+  id              Int      @id @default(1)
+  companyNameEn   String   @default("NIPPUR Pharma")
+  companyNameAr   String   @default("نيبور فارما")
+  logoUrl         String   @default("/images/logo-nippur.png")
+  email           String   @default("info@nippurpharma.iq")
+  phone           String   @default("+964 XXX XXX XXXX")
+  address         String   @default("Baghdad, Iraq")
+  workingHours    String   @default("Sunday - Thursday: 8:00 AM - 5:00 PM")
+  emergencyPhone  String   @default("+964 XXX XXX XXXX")
+  descriptionEn   String   @default("")
+  descriptionAr   String   @default("")
+  updatedAt       DateTime @updatedAt
+}
