@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import type { Locale } from '@/lib/i18n/translations';
 import { translations } from '@/lib/i18n/translations';
 
-export type ViewMode = 'website' | 'login' | 'dashboard';
 
 export interface SiteSettings {
   id: number;
@@ -26,8 +25,7 @@ interface AppState {
   setActiveSection: (section: string) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
-  viewMode: ViewMode;
-  setViewMode: (mode: ViewMode) => void;
+
   dashboardTab: string;
   setDashboardTab: (tab: string) => void;
   selectedNews: number | null;
@@ -48,8 +46,7 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveSection: (section) => set({ activeSection: section }),
   mobileMenuOpen: false,
   setMobileMenuOpen: (open) => set({ mobileMenuOpen: open }),
-  viewMode: 'website',
-  setViewMode: (mode) => set({ viewMode: mode }),
+
   dashboardTab: 'overview',
   setDashboardTab: (tab) => set({ dashboardTab: tab }),
   selectedNews: null,

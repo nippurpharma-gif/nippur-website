@@ -147,19 +147,6 @@ export function CareersSection() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 pt-6 border-t border-brand-200/50">
-                <Button
-                  variant="outline"
-                  className="w-full border-brand-300 text-brand-700 hover:bg-brand-50 hover:text-brand-800"
-                  onClick={() => {
-                    setApplyDepartment('');
-                    setApplyPosition('');
-                    setDialogOpen(true);
-                  }}
-                >
-                  {t.careers.submitCV}
-                </Button>
-              </div>
             </div>
           </FadeIn>
         </div>

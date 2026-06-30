@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
+import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -246,7 +247,7 @@ const NAV_ITEMS = [
 // ── Dashboard Component ────────────────────────────────────────────────
 
 export function Dashboard() {
-  const { dashboardTab, setDashboardTab, setViewMode, locale } = useAppStore();
+  const { dashboardTab, setDashboardTab, locale } = useAppStore();
   const isAr = locale === 'ar';
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -320,41 +321,10 @@ export function Dashboard() {
             );
           })}
         </nav>
-
-        {/* Download Project */}
-        <div className="px-3 py-2 border-t border-white/10">
-          <button
-            onClick={async () => {
-              toast.loading(isAr ? 'جارِ تحضير الملف...' : 'Preparing file...', { id: 'dl' });
-              try {
-                const res = await fetch('/api/download?XTransformPort=3000');
-                if (!res.ok) throw new Error();
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'nippur-pharma-project.zip';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(url);
-                toast.success(isAr ? 'تم بدء التحميل!' : 'Download started!', { id: 'dl' });
-              } catch {
-                toast.error(isAr ? 'فشل التحميل' : 'Download failed', { id: 'dl' });
-              }
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-              text-white/60 hover:text-green-400 hover:bg-green-500/10 transition-all duration-150 cursor-pointer"
-          >
-            <Download className="h-5 w-5 shrink-0" />
-            <span>{t('Download Project', 'تحميل المشروع')}</span>
-          </button>
-        </div>
-
         {/* Logout */}
         <div className="px-3 py-2 border-t border-white/10">
           <button
-            onClick={() => setViewMode('website')}
+            onClick={() => signOut({ callbackUrl: '/' })}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
               text-white/60 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150 cursor-pointer"
           >

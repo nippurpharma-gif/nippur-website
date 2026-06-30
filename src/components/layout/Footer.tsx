@@ -4,13 +4,14 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 import { useAppStore } from '@/store';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 
 const DEFAULT_LOGO = '/images/logo-nippur.png';
 
 export function Footer() {
-  const { t, locale, setViewMode } = useAppStore();
+  const { t, locale } = useAppStore();
   const { settings } = useSiteSettings();
 
   const logoUrl = settings?.logoUrl || DEFAULT_LOGO;
@@ -148,13 +149,6 @@ export function Footer() {
             <p className="text-xs text-brand-200/50">
               {t.footer.tagline}
             </p>
-            <button
-              onClick={() => setViewMode('login')}
-              className="text-xs text-brand-200/20 hover:text-brand-200/50 transition-colors"
-              title="Admin"
-            >
-              Admin
-            </button>
           </div>
         </div>
       </div>

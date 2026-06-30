@@ -392,7 +392,7 @@ export const translations = {
       newsletterDesc: 'Subscribe to receive updates about our products and company news.',
       emailPlaceholder: 'Enter your email',
       subscribe: 'Subscribe',
-      copyright: '© 2024 NIPPUR Pharma. All rights reserved.',
+      copyright: '© 2026 NIPPUR Pharma. All rights reserved.',
       tagline: 'Iraqi Manufacturing with International Standards',
     },
 
@@ -795,7 +795,7 @@ export const translations = {
       newsletterDesc: 'اشترك لتلقي التحديثات حول منتجاتنا وأخبار الشركة.',
       emailPlaceholder: 'أدخل بريدك الإلكتروني',
       subscribe: 'اشتراك',
-      copyright: '© 2024 نيبور فارما. جميع الحقوق محفوظة.',
+      copyright: '© 2026 نيبور فارما. جميع الحقوق محفوظة.',
       tagline: 'صناعة عراقية بمعايير عالمية',
     },
 

@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store';
 
 const ADMIN_PASSWORD = 'nippur2024';
@@ -15,7 +17,10 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { setViewMode, locale } = useAppStore();
+  const { locale } = useAppStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
 
   const isAr = locale === 'ar';
 
@@ -24,16 +29,24 @@ export function LoginPage() {
     setError('');
     setLoading(true);
 
-    // Simulate a brief delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      const res = await signIn('credentials', {
+        redirect: false,
+        password,
+        callbackUrl,
+      });
 
-    if (password === ADMIN_PASSWORD) {
-      setViewMode('dashboard');
-    } else {
-      setError(isAr ? 'كلمة المرور غير صحيحة' : 'Incorrect password');
+      if (res?.error) {
+        setError(isAr ? 'كلمة المرور غير صحيحة' : 'Incorrect password');
+        setLoading(false);
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch (err) {
+      setError(isAr ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'An error occurred, please try again');
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
