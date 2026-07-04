@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppStore } from '@/store';
-import { SectionWrapper, FadeIn, StaggerContainer, StaggerItem } from './SectionWrapper';
+import { SectionWrapper, FadeIn } from './SectionWrapper';
 import { Handshake, Loader2 } from 'lucide-react';
+import LogoLoop, { LogoItem } from '@/components/ui/LogoLoop';
 
 interface Partner {
   id: number;
@@ -48,6 +49,44 @@ export function PartnersSection() {
         ? 'شريك استراتيجي'
         : 'Strategic Partner';
 
+  const logoItems = useMemo<LogoItem[]>(() => {
+    return partners.map((partner) => ({
+      node: (
+        <div 
+          dir={locale === 'ar' ? 'rtl' : 'ltr'} 
+          className="group relative overflow-hidden h-25 w-25 flex items-center flex-col gap-0 px-0 py-0 rounded-full border border-black/[0.04] dark:border-white/[0.05] bg-white/40 dark:bg-brand-950/20 backdrop-blur-md hover:border-brand-500/35 dark:hover:border-brand-400/35 hover:bg-white/80 dark:hover:bg-brand-950/40 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-500 ease-out select-none"
+        >
+          {partner.logoUrl ? (
+            // img
+            <div className="h-25 w-25 fixed top-0 left-0 right-0 rounded-full bg-white p-1.5 flex items-center justify-center shrink-0 border border-black/[0.03] dark:border-white/[0.05] overflow-hidden shadow-xs">
+              <img
+                src={partner.logoUrl}
+                alt={displayName(partner)}
+                className="w-full h-full object-contain pointer-events-none filter grayscale opacity-55 dark:opacity-45 contrast-100 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 ease-out"
+                draggable={false}
+              />
+            </div>
+          ) : (
+            // icon
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-950 dark:to-brand-900 flex items-center justify-center shrink-0 border border-black/[0.03] dark:border-white/[0.05] shadow-xs">
+              <Handshake className="w-6 h-6 text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 pointer-events-none transition-colors duration-500 ease-out" />
+            </div>
+          )}
+          {/* name and description */}
+          <div className="flex flex-col text-start min-w-[150px] max-w-[220px]">
+            <h4 className="font-semibold text-foreground text-sm leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors duration-500 truncate">
+              {displayName(partner)}
+            </h4>
+            <p className="text-[11px] text-muted-foreground truncate mt-1 leading-none">
+              {displayDescription(partner)}
+            </p>
+          </div>
+        </div>
+      ),
+      title: displayName(partner),
+    }));
+  }, [partners, locale]);
+
   if (!loading && partners.length === 0) {
     return null;
   }
@@ -64,35 +103,41 @@ export function PartnersSection() {
           <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
         </div>
       ) : (
-        <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {partners.map((partner) => (
-            <StaggerItem key={partner.id}>
-              <div className="flex items-center gap-4 p-5 rounded-2xl border border-border/60 bg-card hover:border-brand-200 hover:shadow-lg transition-all duration-300">
-                {partner.logoUrl ? (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center shrink-0 overflow-hidden">
-                    <img
-                      src={partner.logoUrl}
-                      alt={displayName(partner)}
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center shrink-0">
-                    <Handshake className="w-6 h-6 text-brand-600" />
-                  </div>
-                )}
-                <div>
-                  <h4 className="font-semibold text-foreground text-sm">
-                    {displayName(partner)}
-                  </h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {displayDescription(partner)}
-                  </p>
-                </div>
-              </div>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        <FadeIn>
+          <div className="relative w-full py-0 overflow-hidden">
+            <LogoLoop
+              logos={logoItems}
+              speed={40}
+              direction={locale === 'ar' ? 'right' : 'left'}
+              logoHeight={76}
+              gap={60}
+              pauseOnHover={true}
+              fadeOut={true}
+            />
+          </div>
+          <div className="relative w-full py-0 overflow-hidden">
+            <LogoLoop
+              logos={logoItems}
+              speed={30}
+              direction={locale === 'ar' ? 'left' : 'right'}
+              logoHeight={76}
+              gap={40}
+              pauseOnHover={true}
+              fadeOut={true}
+            />
+          </div>
+          <div className="relative w-full py-0 overflow-hidden">
+            <LogoLoop
+              logos={logoItems}
+              speed={30}
+              direction={locale === 'ar' ? 'right' : 'left'}
+              logoHeight={76}
+              gap={60}
+              pauseOnHover={true}
+              fadeOut={true}
+            />
+          </div>
+        </FadeIn>
       )}
     </SectionWrapper>
   );
