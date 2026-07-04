@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { MapPin, Mail, Phone, Clock, AlertCircle, Send } from 'lucide-react';
+import { MapPin, Mail, Phone, Clock, Send } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { SectionWrapper, FadeIn } from '@/components/sections/SectionWrapper';
@@ -64,7 +64,6 @@ export function ContactSection() {
     { icon: Mail, label: t.contact.info.email, value: settings?.email || '' },
     { icon: Phone, label: t.contact.info.phone, value: settings?.phone || '' },
     { icon: Clock, label: t.contact.info.workingHours, value: settings?.workingHours || '' },
-    { icon: AlertCircle, label: t.contact.info.emergency, value: settings?.emergencyPhone || '' },
   ];
 
   return (
