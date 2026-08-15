@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   LayoutDashboard,
   Newspaper,
@@ -21,10 +21,12 @@ import {
   Briefcase,
   Settings,
   Upload,
+  Package,
+  Shield,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,8 +58,20 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { useAppStore } from '@/store';
+import { ProductsTab } from '@/components/dashboard/ProductsTab';
+import { UsersTab } from '@/components/dashboard/UsersTab';
+import { ProductionStatsEditor } from '@/components/dashboard/ProductionStatsEditor';
+import {
+  DEFAULT_PRODUCTION_STATS,
+  parseProductionStats,
+  type ProductionStat,
+} from '@/lib/production-stats';
 
 const API_BASE = '/api';
+
+function asList<T>(data: unknown): T[] {
+  return Array.isArray(data) ? data : [];
+}
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -165,6 +179,7 @@ interface SiteSettingsData {
   workingHours: string;
   descriptionEn: string;
   descriptionAr: string;
+  productionStats?: ProductionStat[];
   updatedAt: string;
 }
 
@@ -237,10 +252,12 @@ function formatDate(dateStr: string) {
 
 const NAV_ITEMS = [
   { id: 'overview', icon: LayoutDashboard, labelEn: 'Overview', labelAr: 'نظرة عامة' },
+  { id: 'products', icon: Package, labelEn: 'Products', labelAr: 'المنتجات' },
   { id: 'news', icon: Newspaper, labelEn: 'News Management', labelAr: 'إدارة الأخبار' },
   { id: 'applications', icon: Users, labelEn: 'Applications', labelAr: 'الطلبات' },
   { id: 'partners', icon: Handshake, labelEn: 'Partners', labelAr: 'الشركاء' },
   { id: 'jobs', icon: Briefcase, labelEn: 'Job Positions', labelAr: 'الوظائف' },
+  { id: 'users', icon: Shield, labelEn: 'Users & Login', labelAr: 'المستخدمون وتسجيل الدخول' },
   { id: 'settings', icon: Settings, labelEn: 'Site Settings', labelAr: 'إعدادات الموقع' },
 ];
 
@@ -348,10 +365,12 @@ export function Dashboard() {
           <div className="flex-1 flex items-center justify-between">
             <h1 className="text-lg font-semibold text-gray-900">
               {activeTab === 'overview' && t('Overview', 'نظرة عامة')}
+              {activeTab === 'products' && t('Products', 'المنتجات')}
               {activeTab === 'news' && t('News Management', 'إدارة الأخبار')}
               {activeTab === 'applications' && t('Applications', 'الطلبات')}
               {activeTab === 'partners' && t('Partners', 'الشركاء')}
               {activeTab === 'jobs' && t('Job Positions', 'الوظائف')}
+              {activeTab === 'users' && t('Users & Login', 'المستخدمون وتسجيل الدخول')}
               {activeTab === 'settings' && t('Site Settings', 'إعدادات الموقع')}
             </h1>
 
@@ -365,10 +384,12 @@ export function Dashboard() {
         {/* Tab content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {activeTab === 'overview' && <OverviewTab />}
+          {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'news' && <NewsTab />}
           {activeTab === 'applications' && <ApplicationsTab />}
           {activeTab === 'partners' && <PartnersTab />}
           {activeTab === 'jobs' && <JobsTab />}
+          {activeTab === 'users' && <UsersTab />}
           {activeTab === 'settings' && <SettingsTab />}
         </main>
       </div>
@@ -385,12 +406,13 @@ function OverviewTab() {
 
   const { data: news = [], isLoading: newsLoading } = useQuery<NewsArticle[]>({
     queryKey: ['news'],
-    queryFn: () => fetch(`${API_BASE}/news?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () => asList<NewsArticle>(await fetch(`${API_BASE}/news`).then((r) => r.json())),
   });
 
   const { data: applications = [], isLoading: appsLoading } = useQuery<Application[]>({
     queryKey: ['applications'],
-    queryFn: () => fetch(`${API_BASE}/applications?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () =>
+      asList<Application>(await fetch(`${API_BASE}/applications`).then((r) => r.json())),
   });
 
   const publishedCount = news.filter((n) => n.isPublished).length;
@@ -531,12 +553,12 @@ function NewsTab() {
 
   const { data: news = [], isLoading } = useQuery<NewsArticle[]>({
     queryKey: ['news'],
-    queryFn: () => fetch(`${API_BASE}/news?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () => asList<NewsArticle>(await fetch(`${API_BASE}/news`).then((r) => r.json())),
   });
 
   const createMutation = useMutation({
     mutationFn: (data: NewsFormData) =>
-      fetch(`${API_BASE}/news?XTransformPort=3000`, {
+      fetch(`${API_BASE}/news`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -549,7 +571,7 @@ function NewsTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: NewsFormData & { id: number }) =>
-      fetch(`${API_BASE}/news?XTransformPort=3000`, {
+      fetch(`${API_BASE}/news`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -562,7 +584,7 @@ function NewsTab() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`${API_BASE}/news?id=${id}&XTransformPort=3000`, { method: 'DELETE' }).then((r) => r.json()),
+      fetch(`${API_BASE}/news?id=${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['news'] });
       setDeleteDialogOpen(false);
@@ -903,12 +925,13 @@ function ApplicationsTab() {
 
   const { data: applications = [], isLoading } = useQuery<Application[]>({
     queryKey: ['applications'],
-    queryFn: () => fetch(`${API_BASE}/applications?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () =>
+      asList<Application>(await fetch(`${API_BASE}/applications`).then((r) => r.json())),
   });
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
-      fetch(`${API_BASE}/applications?XTransformPort=3000`, {
+      fetch(`${API_BASE}/applications`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
@@ -970,7 +993,7 @@ function ApplicationsTab() {
                       <TableCell>
                         {app.cvFileName ? (
                           <a
-                            href={`/api/uploads/${app.cvFileName}?XTransformPort=3000`}
+                            href={`/api/uploads/${app.cvFileName}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
@@ -1055,7 +1078,7 @@ function ApplicationsTab() {
                   <p className="text-xs font-medium text-gray-400 uppercase">{t('CV', 'السيرة الذاتية')}</p>
                   {selectedApp.cvFileName ? (
                     <a
-                      href={`/api/uploads/${selectedApp.cvFileName}?XTransformPort=3000`}
+                      href={`/api/uploads/${selectedApp.cvFileName}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-brand-600 hover:text-brand-700 text-sm font-medium mt-0.5"
@@ -1127,12 +1150,12 @@ function PartnersTab() {
 
   const { data: partners = [], isLoading } = useQuery<Partner[]>({
     queryKey: ['partners'],
-    queryFn: () => fetch(`${API_BASE}/partners?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () => asList<Partner>(await fetch(`${API_BASE}/partners`).then((r) => r.json())),
   });
 
   const createMutation = useMutation({
     mutationFn: (data: PartnerFormData) =>
-      fetch(`${API_BASE}/partners?XTransformPort=3000`, {
+      fetch(`${API_BASE}/partners`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1145,7 +1168,7 @@ function PartnersTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: PartnerFormData & { id: number }) =>
-      fetch(`${API_BASE}/partners?XTransformPort=3000`, {
+      fetch(`${API_BASE}/partners`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1158,7 +1181,7 @@ function PartnersTab() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`${API_BASE}/partners?id=${id}&XTransformPort=3000`, { method: 'DELETE' }).then((r) => r.json()),
+      fetch(`${API_BASE}/partners?id=${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['partners'] });
       setDeleteDialogOpen(false);
@@ -1371,12 +1394,12 @@ function JobsTab() {
 
   const { data: jobs = [], isLoading } = useQuery<JobPosition[]>({
     queryKey: ['jobs'],
-    queryFn: () => fetch(`${API_BASE}/jobs?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: async () => asList<JobPosition>(await fetch(`${API_BASE}/jobs`).then((r) => r.json())),
   });
 
   const createMutation = useMutation({
     mutationFn: (data: JobFormData) =>
-      fetch(`${API_BASE}/jobs?XTransformPort=3000`, {
+      fetch(`${API_BASE}/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1389,7 +1412,7 @@ function JobsTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: JobFormData & { id: number }) =>
-      fetch(`${API_BASE}/jobs?XTransformPort=3000`, {
+      fetch(`${API_BASE}/jobs`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -1402,7 +1425,7 @@ function JobsTab() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) =>
-      fetch(`${API_BASE}/jobs?id=${id}&XTransformPort=3000`, { method: 'DELETE' }).then((r) => r.json()),
+      fetch(`${API_BASE}/jobs?id=${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs'] });
       setDeleteDialogOpen(false);
@@ -1667,7 +1690,7 @@ function SettingsTab() {
 
   const { data: settings, isLoading } = useQuery<SiteSettingsData>({
     queryKey: ['settings'],
-    queryFn: () => fetch(`${API_BASE}/settings?XTransformPort=3000`).then((r) => r.json()),
+    queryFn: () => fetch(`${API_BASE}/settings`).then((r) => r.json()),
   });
 
   const [formData, setFormData] = useState({
@@ -1681,22 +1704,25 @@ function SettingsTab() {
     workingHours: '',
     descriptionEn: '',
     descriptionAr: '',
+    productionStats: DEFAULT_PRODUCTION_STATS,
   });
 
-  // Sync form data when settings load
-  const isInitialized = settings && formData.companyNameEn === '' && settings.companyNameEn !== '';
-  const form = isInitialized ? {
-    companyNameEn: settings.companyNameEn,
-    companyNameAr: settings.companyNameAr,
-    logoUrl: settings.logoUrl,
-    email: settings.email,
-    phone: settings.phone,
-    emergencyPhone: settings.emergencyPhone,
-    address: settings.address,
-    workingHours: settings.workingHours,
-    descriptionEn: settings.descriptionEn,
-    descriptionAr: settings.descriptionAr,
-  } : formData;
+  useEffect(() => {
+    if (!settings || typeof settings !== 'object' || !('id' in settings)) return;
+    setFormData({
+      companyNameEn: settings.companyNameEn ?? '',
+      companyNameAr: settings.companyNameAr ?? '',
+      logoUrl: settings.logoUrl ?? '',
+      email: settings.email ?? '',
+      phone: settings.phone ?? '',
+      emergencyPhone: settings.emergencyPhone ?? '',
+      address: settings.address ?? '',
+      workingHours: settings.workingHours ?? '',
+      descriptionEn: settings.descriptionEn ?? '',
+      descriptionAr: settings.descriptionAr ?? '',
+      productionStats: parseProductionStats(settings.productionStats),
+    });
+  }, [settings]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1713,7 +1739,7 @@ function SettingsTab() {
     try {
       const fd = new FormData();
       fd.append('logo', file);
-      const res = await fetch(`${API_BASE}/upload-logo?XTransformPort=3000`, { method: 'POST', body: fd });
+      const res = await fetch(`${API_BASE}/upload-logo`, { method: 'POST', body: fd });
       if (!res.ok) throw new Error();
       const data = await res.json();
       if (data.logoUrl) {
@@ -1729,16 +1755,18 @@ function SettingsTab() {
 
   const updateMutation = useMutation({
     mutationFn: (data: typeof formData) =>
-      fetch(`${API_BASE}/settings?XTransformPort=3000`, {
+      fetch(`${API_BASE}/settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       }).then((r) => r.json()),
     onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
-      // Sync Zustand store so all public components update immediately
       if (saved && typeof saved === 'object' && saved.id) {
-        setSiteSettings(saved as SiteSettingsData);
+        setSiteSettings({
+          ...saved,
+          productionStats: parseProductionStats(saved.productionStats),
+        });
       }
       toast.success(t('Settings saved successfully', 'تم حفظ الإعدادات بنجاح'));
     },
@@ -1746,7 +1774,7 @@ function SettingsTab() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    updateMutation.mutate(form);
+    updateMutation.mutate(formData);
   }
 
   if (isLoading) {
@@ -1777,18 +1805,18 @@ function SettingsTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Company Name (English)', 'اسم الشركة (إنجليزي)')}</Label>
-              <Input value={form.companyNameEn} onChange={(e) => setFormData({ ...formData, companyNameEn: e.target.value })} />
+              <Input value={formData.companyNameEn} onChange={(e) => setFormData({ ...formData, companyNameEn: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Company Name (Arabic)', 'اسم الشركة (عربي)')}</Label>
-              <Input value={form.companyNameAr} onChange={(e) => setFormData({ ...formData, companyNameAr: e.target.value })} dir="rtl" />
+              <Input value={formData.companyNameAr} onChange={(e) => setFormData({ ...formData, companyNameAr: e.target.value })} dir="rtl" />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-gray-500">{t('Logo', 'الشعار')}</Label>
             <div className="flex items-center gap-3">
-              {form.logoUrl ? (
-                <img src={form.logoUrl} alt="Logo preview" className="h-14 w-auto object-contain bg-gray-50 rounded-lg p-2 border" />
+              {formData.logoUrl ? (
+                <img src={formData.logoUrl} alt="Logo preview" className="h-14 w-auto object-contain bg-gray-50 rounded-lg p-2 border" />
               ) : (
                 <div className="h-14 w-20 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 text-xs">
                   {t('No logo', 'لا شعار')}
@@ -1814,7 +1842,7 @@ function SettingsTab() {
                   {t('Upload Logo', 'رفع الشعار')}
                 </Button>
                 <Input
-                  value={form.logoUrl}
+                  value={formData.logoUrl}
                   onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
                   placeholder="https://... or /images/..."
                   className="h-8 text-xs"
@@ -1837,26 +1865,26 @@ function SettingsTab() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Email', 'البريد الإلكتروني')}</Label>
-              <Input type="email" value={form.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+              <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Phone', 'الهاتف')}</Label>
-              <Input value={form.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+              <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Emergency Phone', 'هاتف الطوارئ')}</Label>
-              <Input value={form.emergencyPhone} onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })} />
+              <Input value={formData.emergencyPhone} onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })} />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-gray-500">{t('Working Hours', 'ساعات العمل')}</Label>
-              <Input value={form.workingHours} onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })} />
+              <Input value={formData.workingHours} onChange={(e) => setFormData({ ...formData, workingHours: e.target.value })} />
             </div>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-gray-500">{t('Address', 'العنوان')}</Label>
-            <Input value={form.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+            <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
           </div>
         </CardContent>
       </Card>
@@ -1872,12 +1900,28 @@ function SettingsTab() {
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-gray-500">{t('Description (English)', 'الوصف (إنجليزي)')}</Label>
-            <Textarea value={form.descriptionEn} onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })} placeholder="Company description in English" rows={5} />
+            <Textarea value={formData.descriptionEn} onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })} placeholder="Company description in English" rows={5} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-gray-500">{t('Description (Arabic)', 'الوصف (عربي)')}</Label>
-            <Textarea value={form.descriptionAr} onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })} placeholder="وصف الشركة بالعربية" rows={5} dir="rtl" />
+            <Textarea value={formData.descriptionAr} onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })} placeholder="وصف الشركة بالعربية" rows={5} dir="rtl" />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-brand-600" />
+            {t('Production figures', 'أرقام الإنتاج')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProductionStatsEditor
+            stats={formData.productionStats}
+            onChange={(productionStats) => setFormData({ ...formData, productionStats })}
+            isAr={isAr}
+          />
         </CardContent>
       </Card>
 

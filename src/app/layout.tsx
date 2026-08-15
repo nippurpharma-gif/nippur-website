@@ -1,61 +1,60 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono, Cairo } from "next/font/google";
-import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { AppProvider } from "@/components/layout/AppProvider";
+import type { Metadata } from 'next';
+import { Inter, IBM_Plex_Mono, Cairo } from 'next/font/google';
+import { cookies } from 'next/headers';
+import './globals.css';
+import { Toaster } from '@/components/ui/toaster';
+import { AppProvider } from '@/components/layout/AppProvider';
+import { LOCALE_COOKIE, parseLocale } from '@/lib/locale';
+import { buildRootMetadata } from '@/lib/seo';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: '--font-ibm-mono',
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  display: 'swap',
 });
 
 const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  display: "swap",
+  variable: '--font-cairo',
+  subsets: ['arabic', 'latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
 });
 
-export const metadata: Metadata = {
-  title: "NIPPUR Pharma — Iraq's Next-Generation Pharmaceutical Manufacturer",
-  description:
-    "NIPPUR Pharma combines Iraq's ancient legacy of healing with cutting-edge European GMP manufacturing technology to deliver world-class pharmaceutical products.",
-  keywords: [
-    "NIPPUR Pharma",
-    "pharmaceutical",
-    "Iraq",
-    "GMP",
-    "cephalosporin",
-    "medicine",
-    "manufacturing",
-    "healthcare",
-  ],
-  authors: [{ name: "NIPPUR Pharma" }],
-  openGraph: {
-    title: "NIPPUR Pharma — Iraq's Pharmaceutical Manufacturer",
-    description: "World-class pharmaceutical manufacturing in Iraq with European GMP technology.",
-    siteName: "NIPPUR Pharma",
-    type: "website",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const cookieStore = await cookies();
+  const locale = parseLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+  return buildRootMetadata(locale);
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = parseLocale(cookieStore.get(LOCALE_COOKIE)?.value);
+  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${ibmPlexMono.variable} ${cairo.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
-        <AppProvider>{children}</AppProvider>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:start-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-brand-700 focus:text-white focus:rounded-lg focus:shadow-xl text-sm font-medium transition-all"
+        >
+          Skip to content / الانتقال إلى المحتوى الرئيسي
+        </a>
+        <AppProvider initialLocale={locale}>{children}</AppProvider>
         <Toaster />
       </body>
     </html>

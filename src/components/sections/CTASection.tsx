@@ -1,88 +1,129 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ArrowRight, Package } from 'lucide-react';
+import { useRef } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
-import { SectionWrapper } from '@/components/sections/SectionWrapper';
-import { Button } from '@/components/ui/button';
+import { gsap, useGSAP, prefersReducedMotion, EASE } from '@/lib/gsap-site';
+import { scrollToSection } from '@/lib/scroll-to-section';
 
 export function CTASection() {
-  const { t } = useAppStore();
+  const { t, locale } = useAppStore();
+  const rootRef = useRef<HTMLElement>(null);
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const bg = root.querySelector<HTMLElement>('[data-cta="bg"]');
+      const parts = gsap.utils.toArray<HTMLElement>('[data-cta-part]', root);
+
+      if (prefersReducedMotion()) {
+        gsap.set(parts, { autoAlpha: 1, y: 0 });
+        return;
+      }
+
+      if (bg) {
+        gsap.fromTo(
+          bg,
+          { scale: 1.08 },
+          {
+            scale: 1,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: root,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.8,
+            },
+          },
+        );
+      }
+
+      gsap
+        .timeline({
+          scrollTrigger: {
+            trigger: root,
+            start: 'top 72%',
+            toggleActions: 'play none none none',
+          },
+        })
+        .from(parts, {
+          y: 28,
+          autoAlpha: 0,
+          duration: 0.75,
+          stagger: 0.12,
+          ease: EASE,
+        });
+    },
+    { scope: rootRef, dependencies: [locale], revertOnUpdate: true },
+  );
 
   return (
-    <SectionWrapper id="cta" dark>
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute -top-1/2 -left-1/4 w-[600px] h-[600px] rounded-full bg-brand-600/10 blur-[120px]"
-          animate={{
-            x: [0, 40, 0],
-            y: [0, -30, 0],
-          }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+    <section
+      id="cta"
+      ref={rootRef}
+      className="relative overflow-hidden min-h-[70svh] lg:min-h-[80svh] flex items-center justify-center"
+    >
+      <div className="absolute inset-0 z-0">
+        <div
+          data-cta="bg"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
+          style={{ backgroundImage: "url('/images/factory-building.png')" }}
+          role="img"
+          aria-hidden
         />
-        <motion.div
-          className="absolute -bottom-1/2 -right-1/4 w-[500px] h-[500px] rounded-full bg-gold-500/8 blur-[100px]"
-          animate={{
-            x: [0, -30, 0],
-            y: [0, 20, 0],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        />
+        <div className="absolute inset-0 bg-black/55" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/35 to-black/70" />
       </div>
 
-      <div className="relative text-center max-w-3xl mx-auto">
-        <motion.h2
-          className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-        >
-          {t.cta.title}
-        </motion.h2>
-
-        <motion.p
-          className="mt-5 text-base lg:text-lg text-brand-200/70 leading-relaxed"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, delay: 0.15, ease: 'easeOut' }}
-        >
-          {t.cta.subtitle}
-        </motion.p>
-
-        <motion.div
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' }}
-        >
-          <Button
-            size="lg"
-            onClick={() => scrollTo('contact')}
-            className="bg-brand-500 hover:bg-brand-400 text-white px-8 text-base min-w-[180px]"
+      <div className="relative z-10 site-container w-full py-20 lg:py-28">
+        <div className="mx-auto max-w-3xl text-center space-y-6 lg:space-y-8">
+          <p
+            data-cta-part
+            className="text-sm font-medium tracking-[-0.01em] text-white/75"
           >
-            {t.cta.contact}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+            {t.cta.badge}
+          </p>
 
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => scrollTo('products')}
-            className="border-brand-400/40 text-brand-200 hover:bg-brand-900/50 hover:text-white hover:border-brand-300/60 px-8 text-base min-w-[180px]"
+          <h2
+            data-cta-part
+            className="text-3xl sm:text-4xl lg:text-5xl xl:text-[3.25rem] font-bold text-white leading-[1.15] tracking-tight"
           >
-            <Package className="mr-2 h-4 w-4" />
-            {t.cta.products}
-          </Button>
-        </motion.div>
+            {t.cta.title}
+          </h2>
+
+          <p
+            data-cta-part
+            className="text-base sm:text-lg text-white/80 leading-relaxed max-w-2xl mx-auto"
+          >
+            {t.cta.subtitle}
+          </p>
+
+          <div
+            data-cta-part
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2"
+          >
+            <button
+              type="button"
+              onClick={() => scrollToSection('contact')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/30 bg-black/40 backdrop-blur-xs text-white hover:bg-white hover:text-brand-900 text-xs sm:text-sm font-medium transition-all duration-200 group"
+            >
+              <span>{t.cta.contact}</span>
+              <ArrowUpRight className="size-4 text-brand-200 group-hover:text-brand-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200 rtl:rotate-[-90deg]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => scrollToSection('products')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/30 bg-black/40 backdrop-blur-xs text-white hover:bg-white hover:text-brand-900 text-xs sm:text-sm font-medium transition-all duration-200 group"
+            >
+              <span>{t.cta.products}</span>
+              <ArrowUpRight className="size-4 text-brand-200 group-hover:text-brand-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200 rtl:rotate-[-90deg]" />
+            </button>
+          </div>
+        </div>
       </div>
-    </SectionWrapper>
+    </section>
   );
 }

@@ -3,6 +3,8 @@ import type { Locale } from '@/lib/i18n/translations';
 import { translations } from '@/lib/i18n/translations';
 
 
+import type { ProductionStat } from '@/lib/production-stats';
+
 export interface SiteSettings {
   id: number;
   companyNameEn: string;
@@ -15,6 +17,7 @@ export interface SiteSettings {
   emergencyPhone: string;
   descriptionEn: string;
   descriptionAr: string;
+  productionStats: ProductionStat[];
 }
 
 interface AppState {

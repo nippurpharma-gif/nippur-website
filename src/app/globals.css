@@ -6,9 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-arabic: var(--font-cairo);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-arabic: var(--font-cairo), "Cairo", ui-sans-serif, sans-serif;
+  --font-mono: var(--font-ibm-mono), "IBM Plex Mono", ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -43,7 +43,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* NIPPUR Brand Colors — Logo Blue #1E5BA8 */
+  /* NIPPUR Brand — sterile steel blue from logo #1E5BA8 */
   --color-brand-50: #EFF4FB;
   --color-brand-100: #D9E7F7;
   --color-brand-200: #B3CFF0;
@@ -56,7 +56,7 @@
   --color-brand-900: #0A2544;
   --color-brand-950: #051325;
 
-  /* Gold Accent — Warm tones from factory lighting */
+  /* Gold — warm factory lighting accent (scarce) */
   --color-gold-50: #FDF9EF;
   --color-gold-100: #FAF0D4;
   --color-gold-200: #F4E0A5;
@@ -66,7 +66,6 @@
   --color-gold-600: #B07D1F;
   --color-gold-700: #8E6219;
 
-  /* Legacy alias — pharma maps to brand */
   --color-pharma-50: var(--color-brand-50);
   --color-pharma-100: var(--color-brand-100);
   --color-pharma-200: var(--color-brand-200);
@@ -81,24 +80,41 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: #FAFBFD;
-  --foreground: #0A2544;
+  /* Type scale — 1.25 ratio from 16px body */
+  --text-caption: 0.6875rem; /* 11 */
+  --text-sm: 0.875rem; /* 14 */
+  --text-base: 1rem; /* 16 */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.375rem; /* 22 */
+  --text-2xl: 1.75rem; /* 28 */
+  --text-3xl: 2.25rem; /* 36 */
+  --text-4xl: 2.75rem; /* 44 */
+  --text-display: clamp(2.75rem, 5vw, 4.25rem);
+
+  /* Text hierarchy — four levels */
+  --ink: #0A2544;
+  --ink-secondary: #3D5270;
+  --ink-tertiary: #5A6B80;
+  --ink-muted: #8A97A8;
+
+  --radius: 0.5rem;
+  --background: #F7F9FC;
+  --foreground: var(--ink);
   --card: #FFFFFF;
-  --card-foreground: #0A2544;
+  --card-foreground: var(--ink);
   --popover: #FFFFFF;
-  --popover-foreground: #0A2544;
+  --popover-foreground: var(--ink);
   --primary: #1E5BA8;
   --primary-foreground: #FFFFFF;
   --secondary: #EFF4FB;
   --secondary-foreground: #164A87;
   --muted: #F1F4F9;
-  --muted-foreground: #5A6B80;
+  --muted-foreground: var(--ink-tertiary);
   --accent: #EFF4FB;
   --accent-foreground: #164A87;
   --destructive: #DC2626;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
+  --border: rgba(10, 37, 68, 0.1);
+  --input: rgba(10, 37, 68, 0.12);
   --ring: #1E5BA8;
   --chart-1: #1E5BA8;
   --chart-2: #4A8FD6;
@@ -106,67 +122,132 @@
   --chart-4: #7DAFE4;
   --chart-5: #ECC96D;
   --sidebar: #F8FAFC;
-  --sidebar-foreground: #0A2544;
+  --sidebar-foreground: var(--ink);
   --sidebar-primary: #1E5BA8;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #EFF4FB;
   --sidebar-accent-foreground: #164A87;
-  --sidebar-border: #E2E8F0;
+  --sidebar-border: rgba(10, 37, 68, 0.1);
   --sidebar-ring: #1E5BA8;
+
+  --ease-out-craft: cubic-bezier(0.23, 1, 0.32, 1);
+  --shadow-lift: 0 0 0 1px rgba(10, 37, 68, 0.06), 0 1px 2px -1px rgba(10, 37, 68, 0.06), 0 2px 4px rgba(10, 37, 68, 0.04);
+
+  /* DESIGN.md structure — Framer spacing + radius (NIPPUR blue kept) */
+  --space-hair: 1px;
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 15px;
+  --space-lg: 20px;
+  --space-xl: 30px;
+  --space-xxl: 40px;
+  --space-gutter: 80px;
+  --space-section: 96px;
+  --container-max: 1440px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 15px;
+  --radius-xl: 20px;
+  --radius-xxl: 30px;
+  --radius-pill: 100px;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
+
   html {
     scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-size: var(--text-base);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4 {
+    text-wrap: balance;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-weight: 600;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* Arabic font */
+/* Arabic — Cairo as primary face with optical tuning */
 [dir="rtl"] body,
 [dir="rtl"] {
-  font-family: var(--font-cairo), 'Cairo', sans-serif;
+  font-family: var(--font-cairo), "Cairo", ui-sans-serif, sans-serif;
+  letter-spacing: 0;
+  line-height: 1.7;
 }
 
-/* Custom scrollbar */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4 {
+  letter-spacing: 0;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+[dir="rtl"] .tracking-tight,
+[dir="rtl"] .tracking-tighter {
+  letter-spacing: 0 !important;
+}
+
+[dir="rtl"] .tracking-\[0\.15em\],
+[dir="rtl"] .tracking-\[0\.12em\],
+[dir="rtl"] .tracking-widest {
+  letter-spacing: 0.04em !important;
+}
+
+/* Scrollbar — quiet */
 ::-webkit-scrollbar {
   width: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #F1F4F9;
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #B3CFF0;
+  background: rgba(30, 91, 168, 0.25);
   border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #7DAFE4;
+  background: rgba(30, 91, 168, 0.4);
 }
 
-/* Glass morphism */
+/* Glass — whisper elevation */
 .glass {
-  background: rgba(255, 255, 255, 0.80);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(247, 249, 252, 0.86);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
 
 .glass-dark {
-  background: rgba(5, 19, 37, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(5, 19, 37, 0.88);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
 }
 
-/* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #1E5BA8, #4A8FD6);
+  background: linear-gradient(135deg, #7DAFE4, #B3CFF0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -179,39 +260,144 @@
   background-clip: text;
 }
 
-/* Floating animation */
+/* Layout shell — outer viewport gutters + max content width */
+.site-container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--space-lg);
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .site-container {
+    padding-inline: var(--space-xxl);
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-container {
+    /* Outer 80px gutters until the 1440px cap; then centered */
+    width: min(100% - (2 * var(--space-gutter)), var(--container-max));
+    max-width: var(--container-max);
+    margin-inline: auto;
+    padding-inline: 0;
+  }
+}
+
+.section-pad {
+  padding-block: calc(var(--space-section) * 0.75);
+}
+
+@media (min-width: 1024px) {
+  .section-pad {
+    padding-block: var(--space-section);
+  }
+}
+
+/* Section label — Forma dot + name (not uppercase tracking) */
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-secondary);
+}
+
+.section-label::before {
+  content: "";
+  width: 0.375rem;
+  height: 0.375rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: currentColor;
+}
+
+[dir="rtl"] .section-label {
+  letter-spacing: 0;
+}
+
+.section-title {
+  font-size: clamp(1.5rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  color: var(--ink);
+  max-width: 52rem;
+}
+
+[dir="rtl"] .section-title {
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+.section-subtitle {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.65;
+  letter-spacing: -0.01em;
+  color: var(--ink-secondary);
+  max-width: 40rem;
+}
+
+[dir="rtl"] .section-subtitle {
+  letter-spacing: 0;
+  line-height: 1.8;
+}
+
+/* Card shell from DESIGN.md radius scale */
+.design-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: var(--space-lg);
+}
+
+.design-card-soft {
+  border-radius: var(--radius-xxl);
+  background: var(--muted);
+  padding: var(--space-xl);
+  border: none;
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 
-/* Pulse glow */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(30, 91, 168, 0.10); }
-  50% { box-shadow: 0 0 40px rgba(30, 91, 168, 0.20); }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-/* RTL support */
 [dir="rtl"] {
   text-align: right;
 }
 
-/* Selection */
 ::selection {
   background: #1E5BA8;
   color: white;
 }
 
-/* Focus visible */
 *:focus-visible {
   outline: 2px solid #1E5BA8;
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-float,
+  .animate-pulse {
+    animation: none !important;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

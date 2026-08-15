@@ -1,8 +1,14 @@
 'use client';
 
-import { useRef, useEffect, ReactNode } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useRef, useEffect, type ReactNode } from 'react';
 import { useAppStore } from '@/store';
+import {
+  gsap,
+  useGSAP,
+  prefersReducedMotion,
+  revealSectionHeader,
+  EASE,
+} from '@/lib/gsap-site';
 
 interface SectionWrapperProps {
   id: string;
@@ -13,6 +19,8 @@ interface SectionWrapperProps {
   subtitle?: string;
   dark?: boolean;
   noPadding?: boolean;
+  /** Sticky/pin stacks need visible overflow */
+  overflowVisible?: boolean;
 }
 
 export function SectionWrapper({
@@ -24,47 +32,66 @@ export function SectionWrapper({
   subtitle,
   dark = false,
   noPadding = false,
+  overflowVisible = false,
 }: SectionWrapperProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      if (!headerRef.current) return;
+      revealSectionHeader(headerRef.current);
+    },
+    { scope: headerRef, dependencies: [badge, title, subtitle] },
+  );
 
   return (
     <section
       id={id}
-      ref={ref}
-      className={`relative overflow-hidden ${dark ? 'bg-brand-950 text-white' : 'bg-background text-foreground'} ${noPadding ? '' : 'py-20 lg:py-28'} ${className}`}
+      className={`relative ${overflowVisible ? 'overflow-visible' : 'overflow-hidden'} ${dark ? 'bg-brand-950 text-white' : 'bg-[#F7F9FC] text-[var(--ink)]'} ${noPadding ? '' : 'section-pad'} ${className}`}
     >
-      {/* Subtle background pattern */}
-      {!dark && (
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230f766e' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      )}
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative site-container">
         {(badge || title || subtitle) && (
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className={`max-w-3xl ${title || subtitle ? 'mb-14 lg:mb-16' : ''}`}
+          <div
+            ref={headerRef}
+            className={`${title || subtitle ? 'mb-12 lg:mb-16' : 'mb-8'}`}
           >
             {badge && (
-              <span className={`inline-block text-xs font-semibold tracking-[0.15em] uppercase mb-4 px-3 py-1.5 rounded-full ${dark ? 'bg-brand-900/50 text-brand-300 border border-brand-800/50' : 'bg-brand-50 text-brand-700 border border-brand-200/50'}`}>
-                {badge}
-              </span>
+              <div
+                data-section-header="label"
+                className={`mb-8 lg:mb-10 flex items-center gap-2.5 ${
+                  dark ? 'text-white/75' : 'text-[var(--ink-secondary)]'
+                }`}
+              >
+                <span
+                  className={`size-1.5 shrink-0 rounded-full ${
+                    dark ? 'bg-white' : 'bg-[var(--ink)]'
+                  }`}
+                  aria-hidden
+                />
+                <span className="text-sm font-medium tracking-[-0.01em]">
+                  {badge}
+                </span>
+              </div>
             )}
             {title && (
-              <h2 className={`text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight ${dark ? 'text-white' : 'text-foreground'}`}>
+              <h2
+                data-section-header="title"
+                className={`section-title ${dark ? 'text-white' : 'text-[var(--ink)]'}`}
+              >
                 {title}
               </h2>
             )}
             {subtitle && (
-              <p className={`mt-4 text-base lg:text-lg leading-relaxed ${dark ? 'text-brand-200/70' : 'text-muted-foreground'}`}>
+              <p
+                data-section-header="subtitle"
+                className={`section-subtitle ${
+                  dark ? 'text-white/70' : 'text-[var(--ink-secondary)]'
+                }`}
+              >
                 {subtitle}
               </p>
             )}
-          </motion.div>
+          </div>
         )}
         {children}
       </div>
@@ -72,63 +99,127 @@ export function SectionWrapper({
   );
 }
 
-export function FadeIn({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
+export function FadeIn({
+  children,
+  delay = 0,
+  className = '',
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useGSAP(
+    () => {
+      const el = ref.current;
+      if (!el) return;
+
+      if (prefersReducedMotion()) {
+        gsap.set(el, { y: 0 });
+        return;
+      }
+
+      gsap.from(el, {
+        y: 22,
+        duration: 0.65,
+        delay,
+        ease: EASE,
+        immediateRender: false,
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 88%',
+          toggleActions: 'play none none none',
+        },
+      });
+    },
+    { scope: ref, dependencies: [delay] },
+  );
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 25 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
-      className={className}
-    >
+    <div ref={ref} className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-export function StaggerContainer({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function StaggerContainer({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useGSAP(
+    () => {
+      const el = ref.current;
+      if (!el) return;
+
+      const items = gsap.utils.toArray<HTMLElement>('[data-stagger-item]', el);
+
+      if (prefersReducedMotion()) {
+        gsap.set(items, { y: 0 });
+        return;
+      }
+
+      gsap.from(items, {
+        y: 22,
+        duration: 0.65,
+        stagger: 0.07,
+        ease: EASE,
+        immediateRender: false,
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+      });
+    },
+    { scope: ref },
+  );
 
   return (
-    <motion.div
-      ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.1 } },
-      }}
-      className={className}
-    >
+    <div ref={ref} className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-export function StaggerItem({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function StaggerItem({
+  children,
+  className = '',
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-      }}
-      className={className}
+    <div
+      data-stagger-item
+      className={`transition-transform duration-200 hover:-translate-y-0.5 ${className}`}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-// Track active section on scroll
 export function useActiveSection() {
   const { setActiveSection } = useAppStore();
 
   useEffect(() => {
-    const sections = ['hero', 'about', 'manufacturing', 'products', 'research', 'quality', 'sustainability', 'careers', 'news', 'contact'];
+    const sections = [
+      'hero',
+      'about',
+      'manufacturing',
+      'products',
+      'research',
+      'quality',
+      'sustainability',
+      'careers',
+      'news',
+      'contact',
+    ];
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -137,7 +228,7 @@ export function useActiveSection() {
           }
         });
       },
-      { rootMargin: '-20% 0px -70% 0px' }
+      { rootMargin: '-20% 0px -70% 0px' },
     );
 
     sections.forEach((id) => {

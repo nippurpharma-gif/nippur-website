@@ -1,50 +1,16 @@
-'use client';
+import { HomePage } from '@/components/layout/HomePage';
+import { OrganizationJsonLd } from '@/components/seo/JsonLd';
+import { getHomePageData } from '@/lib/home-data';
 
-import { useEffect } from 'react';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { useActiveSection } from '@/components/sections/SectionWrapper';
-import { HeroSection } from '@/components/sections/HeroSection';
-import { AboutSection } from '@/components/sections/AboutSection';
-import { StatsSection } from '@/components/sections/StatsSection';
-import { ManufacturingSection } from '@/components/sections/ManufacturingSection';
-import { ProductsSection } from '@/components/sections/ProductsSection';
-import { ResearchSection } from '@/components/sections/ResearchSection';
-import { QualitySection } from '@/components/sections/QualitySection';
-import { SustainabilitySection } from '@/components/sections/SustainabilitySection';
-import { CareersSection } from '@/components/sections/CareersSection';
-import { NewsSection } from '@/components/sections/NewsSection';
-import { PartnersSection } from '@/components/sections/PartnersSection';
-import { ContactSection } from '@/components/sections/ContactSection';
-import { CTASection } from '@/components/sections/CTASection';
+export const revalidate = 120;
 
-
-function AppContent() {
-  useActiveSection();
+export default async function Home() {
+  const data = await getHomePageData();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        <HeroSection />
-        <AboutSection />
-        <StatsSection />
-        <ManufacturingSection />
-        <ProductsSection />
-        <ResearchSection />
-        <QualitySection />
-        <SustainabilitySection />
-        <CareersSection />
-        <NewsSection />
-        <PartnersSection />
-        <ContactSection />
-        <CTASection />
-      </main>
-      <Footer />
-    </div>
+    <>
+      <OrganizationJsonLd settings={data.settings} />
+      <HomePage data={data} />
+    </>
   );
-}
-
-export default function Home() {
-  return <AppContent />;
 }

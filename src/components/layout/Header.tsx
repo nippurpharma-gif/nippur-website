@@ -1,18 +1,26 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Globe, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'motion/react';
+import { Menu, X, Languages } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { cn } from '@/lib/utils';
+import { motionTransition } from '@/lib/motion-craft';
+import { persistLocale } from '@/lib/locale';
+import { scrollToSection as scrollTo } from '@/lib/scroll-to-section';
 
-const navItems = [
-  { key: 'home', labelKey: 'home' as const },
+/** Primary desktop nav — 4 minimal items without Contact */
+const primaryNav = [
+  { key: 'hero', labelKey: 'home' as const },
   { key: 'about', labelKey: 'about' as const },
   { key: 'manufacturing', labelKey: 'manufacturing' as const },
   { key: 'products', labelKey: 'products' as const },
+];
+
+/** Full list for mobile drawer */
+const allNav = [
+  ...primaryNav,
   { key: 'research', labelKey: 'research' as const },
   { key: 'quality', labelKey: 'quality' as const },
   { key: 'sustainability', labelKey: 'sustainability' as const },
@@ -24,146 +32,166 @@ const navItems = [
 const DEFAULT_LOGO = '/images/logo-nippur.png';
 
 export function Header() {
-  const { locale, setLocale, t, activeSection, mobileMenuOpen, setMobileMenuOpen } = useAppStore();
+  const { locale, setLocale, t, activeSection, mobileMenuOpen, setMobileMenuOpen } =
+    useAppStore();
   const { settings } = useSiteSettings();
   const [scrolled, setScrolled] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
 
   const logoUrl = settings?.logoUrl || DEFAULT_LOGO;
   const companyName = settings
-    ? (locale === 'ar' ? settings.companyNameAr : settings.companyNameEn)
-    : 'NIPPUR Pharma';
+    ? locale === 'ar'
+      ? settings.companyNameAr
+      : settings.companyNameEn
+    : locale === 'ar'
+      ? 'نيبور فارما'
+      : 'NIPPUR Pharma';
+
+  const onHero = !scrolled;
+  const ink = onHero ? 'text-white' : 'text-brand-800';
+  const inkMuted = onHero ? 'text-white/75' : 'text-[var(--ink-tertiary)]';
+  const inkHover = onHero ? 'hover:text-white' : 'hover:text-brand-600';
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const scrollToSection = useCallback((key: string) => {
-    const el = document.getElementById(key);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+  const scrollToSection = useCallback(
+    (key: string) => {
+      scrollTo(key);
       setMobileMenuOpen(false);
-    }
-  }, [setMobileMenuOpen]);
+    },
+    [setMobileMenuOpen],
+  );
 
-  const toggleLanguage = useCallback((newLocale: 'en' | 'ar') => {
-    setLocale(newLocale);
-    localStorage.setItem('nippur-locale', newLocale);
-    setShowLangMenu(false);
-  }, [setLocale]);
+  const toggleLanguage = useCallback(() => {
+    const next = locale === 'en' ? 'ar' : 'en';
+    setLocale(next);
+    persistLocale(next);
+  }, [locale, setLocale]);
 
   return (
     <>
       <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
+        initial={{ y: -24, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={motionTransition.section}
         className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          scrolled ? 'glass border-b border-border/60 shadow-sm' : 'bg-transparent'
+          'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter,box-shadow] duration-300',
+          scrolled
+            ? 'glass border-b border-[rgba(10,37,68,0.08)] shadow-[var(--shadow-lift)]'
+            : 'bg-transparent border-b border-transparent',
         )}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
-            {/* Logo */}
+        <div className="site-container">
+          {/* Header layout: Logo | Centered 4 Nav Items | Contact & Language Switcher */}
+          <div className="relative flex h-16 lg:h-[4.25rem] items-center justify-between gap-4">
+            {/* Start — Logo Only */}
             <button
+              type="button"
               onClick={() => scrollToSection('hero')}
-              className="flex items-center gap-3 group"
+              className="relative z-20 flex shrink-0 items-center rounded-sm focus-visible:ring-2 focus-visible:ring-brand-600"
+              aria-label={companyName}
             >
               <img
                 src={logoUrl}
                 alt={companyName}
-                className="h-10 lg:h-12 w-auto object-contain"
+                className={cn(
+                  'h-8 lg:h-10 w-auto object-contain transition-[filter] duration-300',
+                  onHero && 'brightness-0 invert',
+                )}
               />
             </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden xl:flex items-center gap-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => scrollToSection(item.key)}
-                  className={cn(
-                    'px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-200 relative',
-                    activeSection === item.key
-                      ? 'text-brand-700'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                  )}
-                >
-                  {t.nav[item.labelKey]}
-                  {activeSection === item.key && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-brand-600 rounded-full"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
-                  )}
-                </button>
-              ))}
+            {/* Center — Primary Minimal Nav (4 items) */}
+            <nav
+              aria-label={locale === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}
+              className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-7 xl:flex"
+            >
+              {primaryNav.map((item) => {
+                const active = activeSection === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => scrollToSection(item.key)}
+                    aria-current={active ? 'page' : undefined}
+                    className={cn(
+                      'pointer-events-auto relative py-1.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-brand-600 rounded-sm',
+                      active ? ink : inkMuted,
+                      inkHover,
+                    )}
+                  >
+                    {t.nav[item.labelKey]}
+                    {active && (
+                      <motion.span
+                        layoutId="navActive"
+                        className={cn(
+                          'absolute inset-x-0 -bottom-0.5 mx-auto h-px w-full max-w-[1.25rem]',
+                          onHero ? 'bg-white/90' : 'bg-brand-600',
+                        )}
+                        transition={motionTransition.springNav}
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </nav>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              {/* Language Switcher */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowLangMenu(!showLangMenu)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                >
-                  <Globe className="w-4 h-4" />
-                  <span className="hidden sm:inline">{locale === 'en' ? 'EN' : 'عر'}</span>
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-                <AnimatePresence>
-                  {showLangMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute end-0 top-full mt-1 w-36 rounded-xl border border-border bg-card shadow-xl overflow-hidden"
-                    >
-                      <button
-                        onClick={() => toggleLanguage('en')}
-                        className={cn('w-full px-4 py-2.5 text-sm text-start hover:bg-accent transition-colors', locale === 'en' && 'text-brand-700 font-semibold bg-brand-50')}
-                      >
-                        English
-                      </button>
-                      <button
-                        onClick={() => toggleLanguage('ar')}
-                        className={cn('w-full px-4 py-2.5 text-sm text-start hover:bg-accent transition-colors', locale === 'ar' && 'text-brand-700 font-semibold bg-brand-50')}
-                      >
-                        العربية
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* CTA Button */}
-              <Button
+            {/* End — Contact Button + Translation Switcher Button */}
+            <div className="relative z-20 flex shrink-0 items-center gap-3 lg:gap-3.5">
+              {/* Contact Us Action Button */}
+              <button
+                type="button"
                 onClick={() => scrollToSection('contact')}
-                size="sm"
-                className="hidden sm:flex bg-brand-600 hover:bg-brand-700 text-white shadow-lg shadow-brand-600/15 text-xs font-semibold tracking-wide"
+                className={cn(
+                  'hidden sm:inline-flex items-center text-[13px] font-medium transition-all duration-200 py-1.5 px-4 rounded-full border',
+                  onHero
+                    ? 'border-white/30 text-white hover:bg-white/10 hover:border-white/50'
+                    : 'border-[rgba(10,37,68,0.15)] text-brand-800 hover:bg-brand-50 hover:border-brand-300',
+                )}
               >
-                {t.nav.getQuote}
-              </Button>
+                {t.nav.contact}
+              </button>
+
+              {/* Translation Button with Icon */}
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                aria-label={locale === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium rounded-full border transition-all duration-200',
+                  onHero
+                    ? 'border-white/30 text-white hover:bg-white/10 hover:border-white/50'
+                    : 'border-[rgba(10,37,68,0.15)] text-brand-800 hover:bg-brand-50 hover:border-brand-300',
+                )}
+              >
+                <Languages className="size-3.5" />
+                <span>{locale === 'en' ? 'العربية' : 'English'}</span>
+              </button>
 
               {/* Mobile Menu Toggle */}
               <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="xl:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+                aria-label={mobileMenuOpen ? (locale === 'ar' ? 'إغلاق القائمة' : 'Close menu') : (locale === 'ar' ? 'فتح القائمة' : 'Open menu')}
+                aria-expanded={mobileMenuOpen}
+                className={cn(
+                  'flex size-10 items-center justify-center rounded-sm xl:hidden',
+                  ink,
+                  onHero ? 'hover:bg-white/10' : 'hover:bg-brand-50',
+                )}
               >
-                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
               </button>
             </div>
           </div>
         </div>
       </motion.header>
 
-      {/* Mobile Menu */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -171,58 +199,72 @@ export function Header() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm xl:hidden"
+              className="fixed inset-0 z-40 bg-brand-950/25 backdrop-blur-sm xl:hidden"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <motion.div
-              initial={{ x: locale === 'ar' ? '-100%' : '100%' }}
+            <motion.aside
+              initial={{ x: locale === 'ar' ? '100%' : '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: locale === 'ar' ? '-100%' : '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              exit={{ x: locale === 'ar' ? '100%' : '-100%' }}
+              transition={{ type: 'spring', damping: 32, stiffness: 320 }}
               className={cn(
-                'fixed top-0 bottom-0 z-50 w-80 max-w-[85vw] bg-card border-border shadow-2xl xl:hidden',
-                locale === 'ar' ? 'right-0 border-s' : 'left-0 border-e'
+                'fixed inset-y-0 z-50 flex w-[min(20rem,88vw)] flex-col bg-white shadow-2xl xl:hidden',
+                locale === 'ar'
+                  ? 'end-0 border-s border-[rgba(10,37,68,0.08)]'
+                  : 'start-0 border-e border-[rgba(10,37,68,0.08)]',
               )}
+              role="dialog"
+              aria-modal="true"
+              aria-label={locale === 'ar' ? 'القائمة' : 'Menu'}
             >
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b border-border">
-                  <img src={logoUrl} alt={companyName} className="h-8 w-auto object-contain" />
-                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 rounded-lg hover:bg-accent">
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-                <nav className="flex-1 overflow-y-auto p-4">
-                  <div className="grid gap-1">
-                    {navItems.map((item) => (
+              <div className="flex items-center justify-between border-b border-[rgba(10,37,68,0.08)] px-5 py-4">
+                <img
+                  src={logoUrl}
+                  alt={companyName}
+                  className="h-7 w-auto object-contain"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex size-10 items-center justify-center rounded-sm text-brand-800 hover:bg-brand-50"
+                  aria-label={locale === 'ar' ? 'إغلاق' : 'Close'}
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto px-3 py-4">
+                <ul className="grid gap-0.5">
+                  {allNav.map((item) => (
+                    <li key={item.key}>
                       <button
-                        key={item.key}
+                        type="button"
                         onClick={() => scrollToSection(item.key)}
                         className={cn(
-                          'w-full px-4 py-3 text-sm font-medium rounded-lg text-start transition-colors',
+                          'w-full rounded-md px-4 py-3 text-start text-sm font-medium transition-colors',
                           activeSection === item.key
                             ? 'bg-brand-50 text-brand-700'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                            : 'text-[var(--ink-secondary)] hover:bg-brand-50/70 hover:text-brand-800',
                         )}
                       >
                         {t.nav[item.labelKey]}
                       </button>
-                    ))}
-                  </div>
-                </nav>
-                <div className="p-4 border-t border-border space-y-2">
-                  <button
-                    onClick={() => toggleLanguage(locale === 'en' ? 'ar' : 'en')}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-sm font-medium rounded-lg hover:bg-accent transition-colors"
-                  >
-                    <Globe className="w-4 h-4" />
-                    {locale === 'en' ? 'اللغة العربية' : 'English'}
-                  </button>
-                  <Button onClick={() => scrollToSection('contact')} className="w-full bg-brand-600 hover:bg-brand-700 text-white">
-                    {t.nav.getQuote}
-                  </Button>
-                </div>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+
+              <div className="space-y-3 border-t border-[rgba(10,37,68,0.08)] px-5 py-5">
+                <button
+                  type="button"
+                  onClick={toggleLanguage}
+                  className="flex items-center gap-2 text-[13px] font-medium text-brand-600"
+                >
+                  <Languages className="size-4" />
+                  <span>{locale === 'en' ? 'العربية' : 'English'}</span>
+                </button>
               </div>
-            </motion.div>
+            </motion.aside>
           </>
         )}
       </AnimatePresence>

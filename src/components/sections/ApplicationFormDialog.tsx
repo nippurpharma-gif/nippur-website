@@ -160,7 +160,7 @@ export function ApplicationFormDialog({
         if (coverLetter.trim()) formData.append('coverLetter', coverLetter.trim());
         if (selectedFile) formData.append('cv', selectedFile);
 
-        const res = await fetch('/api/applications?XTransformPort=3000', {
+        const res = await fetch('/api/applications', {
           method: 'POST',
           body: formData,
         });
@@ -210,6 +210,8 @@ export function ApplicationFormDialog({
               id="app-name"
               type="text"
               required
+              aria-required="true"
+              autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={labels.name}
@@ -227,6 +229,8 @@ export function ApplicationFormDialog({
               id="app-email"
               type="email"
               required
+              aria-required="true"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={labels.email}
@@ -240,6 +244,7 @@ export function ApplicationFormDialog({
             <Input
               id="app-phone"
               type="tel"
+              autoComplete="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={labels.phone}
@@ -337,7 +342,7 @@ export function ApplicationFormDialog({
           <Button
             type="submit"
             disabled={submitting}
-            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold h-11 mt-2"
+            className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold h-11 mt-2 rounded-full"
           >
             {submitting ? (
               <>

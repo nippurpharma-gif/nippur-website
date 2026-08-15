@@ -1,176 +1,169 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { ChevronDown, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useLayoutEffect, useRef } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useActiveSection } from './SectionWrapper';
+import { createHeroGsapTimeline, useGSAP } from '@/lib/gsap-site';
+import { scrollToSection } from '@/lib/scroll-to-section';
+
+/**
+ * Fit a single-line display title exactly to the container width.
+ * Measures at a known base size, then scales by width ratio (EN + AR, all viewports).
+ */
+function fitTitleToWidth(el: HTMLElement, container: HTMLElement) {
+  const target = container.clientWidth;
+  if (target <= 0) return;
+
+  const prevWidth = el.style.width;
+  const prevWhiteSpace = el.style.whiteSpace;
+  const prevDisplay = el.style.display;
+
+  el.style.display = 'inline-block';
+  el.style.width = 'max-content';
+  el.style.whiteSpace = 'nowrap';
+  el.style.fontSize = '100px';
+
+  const measured = el.getBoundingClientRect().width;
+  if (measured <= 0) {
+    el.style.width = prevWidth;
+    el.style.whiteSpace = prevWhiteSpace;
+    el.style.display = prevDisplay;
+    return;
+  }
+
+  // Exact fill — no artificial 180px cap (that left empty sides on wide screens)
+  const next = (target / measured) * 100;
+  el.style.fontSize = `${Math.max(16, next)}px`;
+
+  // Second pass corrects sub-pixel / tracking drift
+  const after = el.getBoundingClientRect().width;
+  if (after > 0 && Math.abs(after - target) > 0.5) {
+    el.style.fontSize = `${Math.max(16, next * (target / after))}px`;
+  }
+
+  el.style.width = '100%';
+  el.style.display = 'block';
+  el.style.whiteSpace = 'nowrap';
+}
 
 export function HeroSection() {
-  const { t } = useAppStore();
+  const { t, locale } = useAppStore();
   useActiveSection();
+  const rootRef = useRef<HTMLElement>(null);
+  const titleWrapRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  useLayoutEffect(() => {
+    const wrap = titleWrapRef.current;
+    const title = titleRef.current;
+    if (!wrap || !title) return;
 
-  const heroStats = [
-    { value: '5', label: t.hero.stats.products },
-    { value: '180M+', label: t.hero.stats.capacity },
-    { value: 'GMP', label: t.hero.stats.standards },
-    { value: '8+', label: t.hero.stats.countries },
-  ];
+    let frame = 0;
+    const run = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => fitTitleToWidth(title, wrap));
+    };
+
+    run();
+
+    const ro = new ResizeObserver(run);
+    ro.observe(wrap);
+
+    const onFonts = () => run();
+    void document.fonts?.ready.then(onFonts);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
+  }, [locale]);
+
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const start = () => {
+        // Re-fit after fonts settle, then animate
+        const wrap = titleWrapRef.current;
+        const title = titleRef.current;
+        if (wrap && title) fitTitleToWidth(title, wrap);
+        createHeroGsapTimeline(root);
+      };
+
+      if (document.fonts?.status === 'loaded') {
+        start();
+      } else {
+        void document.fonts.ready.then(start);
+      }
+    },
+    { scope: rootRef, dependencies: [locale] },
+  );
+
+  const brandTitle = locale === 'ar' ? 'نيـبـور فـارمـا' : 'Nippur Pharma';
 
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col justify-center overflow-hidden"
+      ref={rootRef}
+      className="sticky top-0 z-0 min-h-[100svh] flex flex-col justify-end overflow-hidden bg-neutral-950 pb-5 sm:pb-8 lg:pb-10"
     >
-      {/* Background image with dark overlay */}
       <div className="absolute inset-0 z-0">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          data-hero="bg"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
           style={{ backgroundImage: "url('/images/factory-real.jpeg')" }}
+          role="img"
+          aria-label={
+            locale === 'ar'
+              ? 'منشأة نيبور فارما للتصنيع الدوائي'
+              : 'NIPPUR Pharma manufacturing facility'
+          }
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-950/80 via-brand-950/60 to-brand-950/85" />
-        {/* Subtle animated grain overlay */}
-        <div className="absolute inset-0 opacity-20 mix-blend-overlay" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E")`,
-        }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/92" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.45),transparent_70%)]" />
       </div>
 
-      {/* Decorative elements */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.5, ease: 'easeOut' }}
-        className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-brand-500/5 blur-3xl z-0"
-      />
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.5, ease: 'easeOut', delay: 0.3 }}
-        className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-gold-500/5 blur-3xl z-0"
-      />
-
-      {/* Main content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24 lg:pt-40 lg:pb-32 flex-1 flex flex-col justify-center">
-        <div className="max-w-3xl">
-          {/* Badge */}
-          <motion.span
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.15em] uppercase mb-6 px-4 py-2 rounded-full bg-brand-500/10 text-brand-300 border border-brand-400/20 backdrop-blur-sm"
-          >
-            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
-            {t.hero.badge}
-          </motion.span>
-
-          {/* Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.15 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white"
-          >
-            {t.hero.title}{' '}
-            <span className="bg-gradient-to-r from-brand-300 via-brand-400 to-teal-300 bg-clip-text text-transparent">
-              {t.hero.titleHighlight}
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.3 }}
-            className="mt-6 text-base sm:text-lg lg:text-xl leading-relaxed text-brand-100/70 max-w-2xl"
+      <div
+        key={locale}
+        className="relative z-10 site-container flex flex-col justify-end w-full"
+      >
+        <div className="max-w-md lg:max-w-lg space-y-3 mb-5 lg:mb-8">
+          <p
+            data-hero="subtitle"
+            className="text-sm sm:text-base leading-relaxed text-neutral-200/90 font-normal tracking-[-0.01em]"
           >
             {t.hero.subtitle}
-          </motion.p>
+          </p>
 
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.45 }}
-            className="mt-10 flex flex-col sm:flex-row gap-4"
-          >
-            <Button
-              onClick={() => scrollTo('products')}
-              size="lg"
-              className="bg-brand-600 hover:bg-brand-500 text-white px-8 py-6 text-base rounded-lg shadow-lg shadow-brand-600/25 transition-all hover:shadow-brand-500/30 hover:scale-[1.02] active:scale-[0.98]"
+          <div data-hero="cta" className="relative z-20 pt-0.5">
+            <button
+              type="button"
+              onClick={() => scrollToSection('products')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/30 bg-black/40 backdrop-blur-xs text-white hover:bg-white hover:text-brand-900 text-xs sm:text-sm font-medium transition-all duration-200 group"
             >
-              {t.hero.cta1}
-              <ArrowRight className="ml-2 size-4" />
-            </Button>
-            <Button
-              onClick={() => scrollTo('manufacturing')}
-              variant="outline"
-              size="lg"
-              className="border-brand-400/30 text-brand-200 hover:bg-brand-400/10 hover:text-white hover:border-brand-400/50 px-8 py-6 text-base rounded-lg backdrop-blur-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              {t.hero.cta2}
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Stats Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.6 }}
-        className="relative z-10 border-t border-brand-400/10"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-brand-400/10">
-            {heroStats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.7 + index * 0.1,
-                  ease: 'easeOut',
-                }}
-                className="py-6 lg:py-8 px-4 sm:px-6 text-center"
-              >
-                <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight">
-                  {stat.value}
-                </div>
-                <div className="mt-1 text-xs sm:text-sm text-brand-200/60 font-medium">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
+              <span>{t.hero.cta1}</span>
+              <ArrowUpRight className="size-4 text-brand-200 group-hover:text-brand-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200 rtl:rotate-[-90deg]" />
+            </button>
           </div>
         </div>
-      </motion.div>
-
-      {/* Scroll Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.5, duration: 0.8 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
-      >
-        <motion.button
-          onClick={() => scrollTo('about')}
-          className="flex flex-col items-center gap-2 text-brand-300/60 hover:text-brand-300 transition-colors"
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          aria-label="Scroll down"
-        >
-          <span className="text-xs tracking-widest uppercase">{t.hero.cta2.includes('Discover') || t.hero.cta2.includes('اكتشف') ? 'SCROLL' : 'مرر'}</span>
-          <ChevronDown className="size-5" />
-        </motion.button>
-      </motion.div>
+          {/* Brand Title */}
+        <div ref={titleWrapRef} className="w-full min-w-0">
+          <h1
+            ref={titleRef}
+            data-hero="title"
+            className={`pointer-events-none block w-full leading-[0.9] text-white select-none whitespace-nowrap ${
+              locale === 'ar'
+                ? 'tracking-normal pb-15 lg:pb-0 lg:mt-[-100px]'
+                : 'tracking-[-0.045em] font-medium pb-15 xl:pb-0'
+            }`}
+            style={{ fontSize: 'clamp(1.5rem, 12vw, 8rem)' }}
+          >
+            {brandTitle}
+          </h1>
+        </div>
+      </div>
     </section>
   );
 }

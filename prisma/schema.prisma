@@ -76,5 +76,37 @@ model SiteSettings {
   emergencyPhone  String   @default("+964 XXX XXX XXXX")
   descriptionEn   String   @default("")
   descriptionAr   String   @default("")
+  productionStats Json     @default("[]")
   updatedAt       DateTime @updatedAt
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  nameEn        String
+  nameAr        String
+  categoryEn    String
+  categoryAr    String
+  formEn        String   @default("")
+  formAr        String   @default("")
+  strengthEn    String   @default("")
+  strengthAr    String   @default("")
+  packagingEn   String   @default("")
+  packagingAr   String   @default("")
+  descEn        String   @default("")
+  descAr        String   @default("")
+  leafletUrl    String   @default("")
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+}
+
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("admin")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

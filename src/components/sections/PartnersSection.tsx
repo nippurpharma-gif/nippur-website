@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Handshake, Loader2 } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SectionWrapper, FadeIn } from './SectionWrapper';
-import { Handshake, Loader2 } from 'lucide-react';
-import LogoLoop, { LogoItem } from '@/components/ui/LogoLoop';
+import LogoLoop, { type LogoItem } from '@/components/ui/LogoLoop';
+import { usePrefersReducedMotion } from '@/hooks/use-prefers-reduced-motion';
 
 interface Partner {
   id: number;
@@ -16,80 +17,133 @@ interface Partner {
   isActive: boolean;
 }
 
-export function PartnersSection() {
+const ROW_COUNT = 3;
+const FADE_COLOR = '#F7F9FC';
+/** Circle diameter — matches prior h-25 (100px) layout from design */
+const LOGO_SIZE = 100;
+const LOGO_GAP = 48;
+
+function splitIntoRows<T>(items: T[], rows: number): T[][] {
+  const result = Array.from({ length: rows }, () => [] as T[]);
+  items.forEach((item, index) => {
+    result[index % rows].push(item);
+  });
+  return result;
+}
+
+/** Offset each row so loops don't look identical when partner count is small */
+function offsetRow<T>(items: T[], offset: number): T[] {
+  if (items.length <= 1) return items;
+  const n = offset % items.length;
+  return [...items.slice(n), ...items.slice(0, n)];
+}
+
+export function PartnersSection({ initialPartners }: { initialPartners?: Partner[] }) {
   const { t, locale } = useAppStore();
-  const [partners, setPartners] = useState<Partner[]>([]);
-  const [loading, setLoading] = useState(true);
+  const reduced = usePrefersReducedMotion();
+  const [partners, setPartners] = useState<Partner[]>(
+    () =>
+      initialPartners
+        ?.filter((p) => p.isActive)
+        .sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
+  );
+  const [loading, setLoading] = useState(!initialPartners);
 
   useEffect(() => {
+    if (initialPartners) return;
     async function fetchPartners() {
       try {
-        const res = await fetch('/api/partners?XTransformPort=3000');
+        const res = await fetch('/api/partners');
         if (!res.ok) return;
         const data: Partner[] = await res.json();
         setPartners(
           data
-            .filter((p) => p.isActive === true)
+            .filter((p) => p.isActive)
             .sort((a, b) => a.sortOrder - b.sortOrder),
         );
       } catch {
-        // silently fail — keep empty list
+        // keep empty
       } finally {
         setLoading(false);
       }
     }
     fetchPartners();
-  }, []);
+  }, [initialPartners]);
 
-  const displayName = (p: Partner) => (locale === 'ar' ? p.nameAr : p.nameEn);
-  const displayDescription = (p: Partner) =>
-    p.description
-      ? p.description
-      : locale === 'ar'
-        ? 'شريك استراتيجي'
-        : 'Strategic Partner';
+  const displayName = useCallback(
+    (p: Partner) => (locale === 'ar' ? p.nameAr : p.nameEn),
+    [locale],
+  );
 
-  const logoItems = useMemo<LogoItem[]>(() => {
-    return partners.map((partner) => ({
-      node: (
-        <div 
-          dir={locale === 'ar' ? 'rtl' : 'ltr'} 
-          className="group relative overflow-hidden h-25 w-25 flex items-center flex-col gap-0 px-0 py-0 rounded-full border border-black/[0.04] dark:border-white/[0.05] bg-white/40 dark:bg-brand-950/20 backdrop-blur-md hover:border-brand-500/35 dark:hover:border-brand-400/35 hover:bg-white/80 dark:hover:bg-brand-950/40 hover:shadow-[0_8px_30px_rgb(0,0,0,0.03)] dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-500 ease-out select-none"
+  const toLogoItems = useCallback(
+    (list: Partner[]): LogoItem[] =>
+      list.map((partner) => ({
+        src: partner.logoUrl,
+        alt: displayName(partner),
+        title: displayName(partner),
+      })),
+    [displayName],
+  );
+
+  const rows = useMemo(() => {
+    const split = splitIntoRows(partners, ROW_COUNT);
+    return split.map((row, i) => offsetRow(row, i * 2));
+  }, [partners]);
+
+  const rowConfigs = useMemo(
+    () => [
+      {
+        speed: reduced ? 0 : 42,
+        direction: (locale === 'ar' ? 'right' : 'left') as 'left' | 'right',
+      },
+      {
+        speed: reduced ? 0 : 34,
+        direction: (locale === 'ar' ? 'left' : 'right') as 'left' | 'right',
+      },
+      {
+        speed: reduced ? 0 : 38,
+        direction: (locale === 'ar' ? 'right' : 'left') as 'left' | 'right',
+      },
+    ],
+    [locale, reduced],
+  );
+
+  const renderPartnerLogo = useCallback(
+    (item: LogoItem, key: React.Key) => {
+      const title = 'title' in item ? item.title : 'alt' in item ? item.alt : '';
+      const hasSrc = 'src' in item && item.src;
+
+      return (
+        <div
+          key={key}
+          style={{ width: LOGO_SIZE, height: LOGO_SIZE }}
+          className="group/item flex shrink-0 items-center justify-center rounded-full border border-[rgba(10,37,68,0.08)] bg-white p-3 shadow-[var(--shadow-lift)] transition-[transform,box-shadow,border-color] duration-200 hover:border-brand-200/50 hover:shadow-[0_6px_28px_rgba(10,37,68,0.1)]"
+          title={title}
         >
-          {partner.logoUrl ? (
-            // img
-            <div className="h-25 w-25 fixed top-0 left-0 right-0 rounded-full bg-white p-1.5 flex items-center justify-center shrink-0 border border-black/[0.03] dark:border-white/[0.05] overflow-hidden shadow-xs">
-              <img
-                src={partner.logoUrl}
-                alt={displayName(partner)}
-                className="w-full h-full object-contain pointer-events-none filter grayscale opacity-55 dark:opacity-45 contrast-100 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 ease-out"
-                draggable={false}
-              />
-            </div>
+          {hasSrc ? (
+            <img
+              src={item.src}
+              alt={item.alt ?? title ?? ''}
+              className="h-full w-full object-contain grayscale opacity-55 transition-[filter,opacity] duration-300 group-hover/item:grayscale-0 group-hover/item:opacity-100 pointer-events-none rounded-full"
+              draggable={false}
+              loading="lazy"
+              decoding="async"
+            />
           ) : (
-            // icon
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-950 dark:to-brand-900 flex items-center justify-center shrink-0 border border-black/[0.03] dark:border-white/[0.05] shadow-xs">
-              <Handshake className="w-6 h-6 text-muted-foreground group-hover:text-brand-600 dark:group-hover:text-brand-400 pointer-events-none transition-colors duration-500 ease-out" />
-            </div>
+            <Handshake className="size-10 text-brand-400/70 pointer-events-none" aria-hidden />
           )}
-          {/* name and description */}
-          <div className="flex flex-col text-start min-w-[150px] max-w-[220px]">
-            <h4 className="font-semibold text-foreground text-sm leading-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors duration-500 truncate">
-              {displayName(partner)}
-            </h4>
-            <p className="text-[11px] text-muted-foreground truncate mt-1 leading-none">
-              {displayDescription(partner)}
-            </p>
-          </div>
         </div>
-      ),
-      title: displayName(partner),
-    }));
-  }, [partners, locale]);
+      );
+    },
+    [],
+  );
 
   if (!loading && partners.length === 0) {
     return null;
   }
+
+  const ariaLabel =
+    locale === 'ar' ? 'شعارات شركائنا الاستراتيجيين' : 'Strategic partner logos';
 
   return (
     <SectionWrapper
@@ -99,43 +153,40 @@ export function PartnersSection() {
       subtitle={t.partners.subtitle}
     >
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 text-brand-600 animate-spin" />
+        <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
+          <Loader2 className="w-7 h-7 text-brand-600 animate-spin" />
+          <span className="sr-only">{locale === 'ar' ? 'جاري التحميل' : 'Loading partners'}</span>
         </div>
       ) : (
         <FadeIn>
-          <div className="relative w-full py-0 overflow-hidden">
-            <LogoLoop
-              logos={logoItems}
-              speed={40}
-              direction={locale === 'ar' ? 'right' : 'left'}
-              logoHeight={76}
-              gap={60}
-              pauseOnHover={true}
-              fadeOut={true}
-            />
-          </div>
-          <div className="relative w-full py-0 overflow-hidden">
-            <LogoLoop
-              logos={logoItems}
-              speed={30}
-              direction={locale === 'ar' ? 'left' : 'right'}
-              logoHeight={76}
-              gap={40}
-              pauseOnHover={true}
-              fadeOut={true}
-            />
-          </div>
-          <div className="relative w-full py-0 overflow-hidden">
-            <LogoLoop
-              logos={logoItems}
-              speed={30}
-              direction={locale === 'ar' ? 'right' : 'left'}
-              logoHeight={76}
-              gap={60}
-              pauseOnHover={true}
-              fadeOut={true}
-            />
+          <div className="relative -mx-4 sm:-mx-6 lg:-mx-8 space-y-6 sm:space-y-7">
+            {rows.map((rowPartners, index) => {
+              if (rowPartners.length === 0) return null;
+              const config = rowConfigs[index];
+
+              return (
+                <div
+                  key={index}
+                  className="relative py-2"
+                  style={{ minHeight: LOGO_SIZE + 24 }}
+                >
+                  <LogoLoop
+                    logos={toLogoItems(rowPartners)}
+                    speed={config.speed}
+                    direction={config.direction}
+                    logoHeight={LOGO_SIZE}
+                    gap={LOGO_GAP}
+                    hoverSpeed={0}
+                    scaleOnHover
+                    fadeOut
+                    fadeOutColor={FADE_COLOR}
+                    renderItem={renderPartnerLogo}
+                    ariaLabel={`${ariaLabel} — ${locale === 'ar' ? 'صف' : 'row'} ${index + 1}`}
+                    className="py-2"
+                  />
+                </div>
+              );
+            })}
           </div>
         </FadeIn>
       )}

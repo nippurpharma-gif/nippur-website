@@ -4,6 +4,7 @@ export const translations = {
   en: {
     // Navigation
     nav: {
+      home: 'Home',
       about: 'About',
       manufacturing: 'Manufacturing',
       products: 'Products',
@@ -18,18 +19,15 @@ export const translations = {
 
     // Hero
     hero: {
+      brand: 'NIPPUR Pharma',
       badge: 'Iraq\'s Next-Generation Pharmaceutical Manufacturer',
       title: 'Advancing Healthcare Through',
       titleHighlight: 'Iraqi Innovation',
-      subtitle: 'NIPPUR Pharma combines Iraq\'s ancient legacy of healing with cutting-edge European GMP manufacturing technology to deliver world-class pharmaceutical products.',
+      subtitle: 'NIPPUR Pharma combines Iraq\'s ancient legacy of healing with cutting-edge European good manufacturing practice technology to deliver world-class pharmaceutical products.',
       cta1: 'Explore Our Products',
       cta2: 'Discover Our Facility',
-      stats: {
-        products: 'Product Lines',
-        capacity: 'Annual Capacity',
-        standards: 'GMP Standards',
-        countries: 'Target Markets',
-      },
+      scrollLabel: 'Scroll',
+      scrollHint: 'Scroll down',
     },
 
     // About
@@ -90,7 +88,7 @@ export const translations = {
       capacity: {
         title: 'Production Capacity',
         items: [
-          { label: 'Cephalosporins - syrap', value: '15M+', unit: 'items/year' },
+          { label: 'Cephalosporins - syrup', value: '15M+', unit: 'items/year' },
           { label: 'Cephalosporins - Capsules', value: '100M+', unit: 'items/year' },
           { label: 'Injectable - vials', value: '20M+', unit: 'items/year' },
           { label: 'Injectable - Ampoules', value: '30M+', unit: 'items/year' },
@@ -200,23 +198,35 @@ export const translations = {
       subtitle: 'Our quality management system ensures every product meets the highest international pharmaceutical standards.',
       standards: [
         {
+          num: '/01',
           title: 'GMP Compliance',
-          desc: 'Full compliance with WHO and ICH GMP guidelines in all manufacturing operations.',
+          desc: 'Full compliance with WHO and ICH GMP guidelines in all manufacturing operations, ensuring maximum safety, quality, and efficacy across every batch.',
+          tags: ['WHO GMP Guidelines', 'ICH Q7-Q12 Standards', 'Iraqi FDA Certified'],
+          image: '/images/quality-control.png',
           icon: 'shield-check',
         },
         {
-          title: 'Quality Control',
-          desc: 'State-of-the-art QC laboratory equipped with HPLC, GC, UV-Vis, and dissolution testing systems.',
+          num: '/02',
+          title: 'Quality Control Laboratory',
+          desc: 'State-of-the-art QC laboratory equipped with HPLC, GC, UV-Vis spectrophotometry, and automated dissolution testing systems for material and release analysis.',
+          tags: ['HPLC & GC Testing', 'Spectrophotometry', 'Dissolution Systems'],
+          image: '/images/research-lab.png',
           icon: 'test',
         },
         {
-          title: 'GLP Laboratory',
-          desc: 'Good Laboratory Practice certified testing facilities for reliable analytical results.',
+          num: '/03',
+          title: 'GLP Analytical Laboratory',
+          desc: 'Good Laboratory Practice certified testing facilities providing reliable, fully traceable analytical results and stringent stability testing throughout the product lifecycle.',
+          tags: ['Method Validation', 'Analytical Traceability', 'ISO Standards'],
+          image: '/images/manufacturing-line.png',
           icon: 'flask',
         },
         {
-          title: 'Validation',
-          desc: 'Comprehensive validation programs for equipment, processes, and cleaning procedures.',
+          num: '/04',
+          title: 'Validation & Environmental Safety',
+          desc: 'Comprehensive validation programs covering HVAC cleanroom systems, manufacturing equipment, process qualification, and automated CIP/SIP protocols.',
+          tags: ['Cleanroom ISO 5-8', 'Process Validation', 'Zero-Contamination'],
+          image: '/images/factory-real.jpeg',
           icon: 'check-circle',
         },
       ],
@@ -359,15 +369,9 @@ export const translations = {
 
     // Stats
     stats: {
-      badge: 'By the Numbers',
-      items: [
-        { value: '5', label: 'Manufacturing Facilities', suffix: '' },
-        { value: '180M+', label: 'Annual Production Capacity', suffix: ' units' },
-        { value: '5', label: 'Product Categories', suffix: '' },
-        { value: '150+', label: 'Dedicated Professionals', suffix: '' },
-        { value: '5+', label: 'Product Lines', suffix: '' },
-        { value: 'GMP', label: 'Certified Standards', suffix: '' },
-      ],
+      badge: 'About Us',
+      statement:
+        'We are a pharmaceutical manufacturer focused on crafting safe, intentional medicines that balance Iraqi heritage, European good manufacturing practice, and everyday patient care.',
     },
 
     // Footer
@@ -398,6 +402,7 @@ export const translations = {
 
     // CTA
     cta: {
+      badge: 'Partner with Us',
       title: 'Ready to Partner with Iraq\'s Leading Pharma Manufacturer?',
       subtitle: 'Whether you\'re looking for high-quality pharmaceutical products, distribution partnerships, or investment opportunities — NIPPUR Pharma is your trusted partner.',
       contact: 'Contact Us',
@@ -407,6 +412,7 @@ export const translations = {
   ar: {
     // Navigation
     nav: {
+      home: 'الرئيسية',
       about: 'عن الشركة',
       manufacturing: 'التصنيع',
       products: 'المنتجات',
@@ -421,18 +427,15 @@ export const translations = {
 
     // Hero
     hero: {
+      brand: 'نيبور فارما',
       badge: 'أحدث شركة تصنيع دوائي في العراق',
-      title: 'تقدم الرعاية الصحية من خلال',
-      titleHighlight: 'الابتكار العراقي',
-      subtitle: 'تجمع شركة نيبور فارما بين الإرث العراقي العريق في العلاج وتقنيات التصنيع الأوروبية الحديثة المطابقة لمعايير GMP لتقديم منتجات دوائية عالمية المستوى.',
+      title: 'نرتقي بالرعاية الصحية عبر الابتكار العراقي',
+      titleHighlight: '',
+      subtitle: 'تجمع نيبور فارما بين إرث العراق العريق في العلاج وتقنيات التصنيع الأوروبية الحديثة المطابقة لمعايير ممارسات التصنيع الجيد، لتقديم منتجات دوائية عالمية المستوى.',
       cta1: 'استكشف منتجاتنا',
       cta2: 'اكتشف منشأتنا',
-      stats: {
-        products: 'خطوط إنتاج',
-        capacity: 'القدرة السنوية',
-        standards: 'معايير GMP',
-        countries: 'الأسواق المستهدفة',
-      },
+      scrollLabel: 'مرّر',
+      scrollHint: 'مرّر للأسفل',
     },
 
     // About
@@ -452,7 +455,7 @@ export const translations = {
         title: 'قيمنا',
         items: [
           { title: 'الابتكار', desc: 'الاستثمار المستمر في البحث والتطوير وتقنيات التصنيع الحديثة.' },
-          { title: 'الجودة', desc: 'التزام لا يتزعزع بمعايير GMP والبروتوكولات الدولية للجودة.' },
+          { title: 'الجودة', desc: 'التزام لا يتزعزع بمعايير ممارسات التصنيع الجيد والبروتوكولات الدولية للجودة.' },
           { title: 'النزاهة', desc: 'عمليات شفافة وممارسات تجارية أخلاقية في كل ما نقوم به.' },
           { title: 'الفخر الوطني', desc: 'بناء التميز الصناعي العراقي الذي ينافس على الساحة العالمية.' },
         ],
@@ -467,7 +470,7 @@ export const translations = {
     manufacturing: {
       badge: 'التميز التصنيعي',
       title: 'تصنيع دوائي على مستوى عالمي',
-      subtitle: 'منشآتنا مصممة ومجهزة وفقاً لأعلى معايير GMP الدولية، مع معدات أوروبية متقدمة وأنظمة أتمتة حديثة.',
+      subtitle: 'منشآتنا مصممة ومجهزة وفقاً لأعلى معايير ممارسات التصنيع الجيد الدولية، مع معدات أوروبية متقدمة وأنظمة أتمتة حديثة.',
       facilities: [
         {
           title: 'منشأة السيفالوسبورين',
@@ -603,35 +606,47 @@ export const translations = {
       subtitle: 'يضمن نظام إدارة الجودة لدينا أن كل منتج يلبي أعلى المعايير الدوائية الدولية.',
       standards: [
         {
-          title: 'الامتثال لـ GMP',
-          desc: 'الامتثال الكامل لمبادئ منظمة الصحة العالمية و ICH GMP في جميع عمليات التصنيع.',
+          num: '/01',
+          title: 'الامتثال لممارسات التصنيع الجيد (GMP)',
+          desc: 'الامتثال الكامل لتعليمات منظمة الصحة العالمية وإرشادات ICH GMP في كافة عمليات التصنيع لضمان أعلى معايير السلامة والجودة والفاعلية الدوائية.',
+          tags: ['إرشادات WHO GMP', 'معايير ICH Q7-Q12', 'اعتماد المؤسسة العامة للغذاء والدواء'],
+          image: '/images/quality-control.png',
           icon: 'shield-check',
         },
         {
-          title: 'رقابة الجودة',
-          desc: 'مختبر QC متطور مجهز بأنظمة HPLC و GC و UV-Vis واختبار الذوبان.',
+          num: '/02',
+          title: 'مختبر رقابة الجودة (QC Lab)',
+          desc: 'مختبر رقابة جودة متطور مجهز بأحدث أجهزة الكروماتوغرافيا (HPLC, GC) والمطيافية الضوئية وأنظمة التفكك والذوبان الآلية لفحص المواد والمنتجات النهائية.',
+          tags: ['تحليل HPLC و GC', 'مطيافية الضوء UV-Vis', 'أنظمة اختبار الذوبان'],
+          image: '/images/research-lab.png',
           icon: 'test',
         },
         {
-          title: 'مختبر GLP',
-          desc: 'مرافق اختبار معتمدة بممارسات المختبر الجيدة لنتائج تحليلية موثوقة.',
+          num: '/03',
+          title: 'مختبر الممارسات المختبرية الجيدة (GLP)',
+          desc: 'مرافق فحص واختبار معتمدة وفق معايير GLP توفر نتائج تحليلية موثوقة وموثقة مع برامج دراسات ثبات الدواء على مدار فترة الصلاحية.',
+          tags: ['التحقق من الطرق التحليلية', 'الموثوقية والتوثيق', 'معايير الجودة الدولية ISO'],
+          image: '/images/manufacturing-line.png',
           icon: 'flask',
         },
         {
-          title: 'التحقق والصلاحية',
-          desc: 'برامج شاملة للتحقق من صلاحية المعدات والعمليات وإجراءات التنظيف.',
+          num: '/04',
+          title: 'التثبت والسلامة البيئية',
+          desc: 'برامج تثبت لمعايرة خطوط الإنتاج وأنظمة الغرف النظيفة (HVAC) وبروتوكولات التعقيم والتنظيف الآلي للحد التام من أي تلوث متقاطع.',
+          tags: ['غرف نظيفة ISO 5-8', 'التثبت من العمليات', 'بروتوكولات منع التلوث'],
+          image: '/images/factory-real.jpeg',
           icon: 'check-circle',
         },
       ],
       certifications: {
-        title: 'الشهادات والامتثال',
+        title: 'الشهادات والامتثال العالمي',
         items: [
-          'مبادئ WHO GMP',
-          'مبادئ ICH Q7-Q12',
-          'معايير هيئة الدواء العراقية',
-          'ISO إدارة الجودة',
-          'الامتثال البيئي',
-          'معايير السلامة المهنية',
+          'إرشادات منظمة الصحة العالمية (WHO GMP)',
+          'إرشادات ICH Q7-Q12',
+          'معايير المؤسسة العامة للغذاء والدواء العراقية',
+          'إدارة الجودة ISO 9001',
+          'الامتثال والسلامة البيئية',
+          'معايير السلامة والصحة المهنية',
         ],
       },
     },
@@ -694,8 +709,8 @@ export const translations = {
       items: [
         {
           date: 'ديسمبر 2024',
-          title: 'نيبور فارما تحصل على شهادة GMP',
-          excerpt: 'نفخر بالإعلان عن حصول منشأة التصنيع لدينا على شهادة GMP كاملة من هيئة الدواء العراقية، وهو إنجاز مهم في التزامنا بالجودة.',
+          title: 'نيبور فارما تحصل على شهادة ممارسات التصنيع الجيد',
+          excerpt: 'نفخر بالإعلان عن حصول منشأة التصنيع لدينا على شهادة كاملة لممارسات التصنيع الجيد من هيئة الدواء العراقية، وهو إنجاز مهم في التزامنا بالجودة.',
           category: 'إنجاز',
         },
         {
@@ -762,20 +777,14 @@ export const translations = {
 
     // Stats
     stats: {
-      badge: 'بالأرقام',
-      items: [
-        { value: '5', label: 'منشآت تصنيع', suffix: '' },
-        { value: '180M+', label: 'القدرة الإنتاجية السنوية', suffix: ' وحدة' },
-        { value: '5', label: 'فئات المنتجات', suffix: '' },
-        { value: '150+', label: 'متخصصون ', suffix: '' },
-        { value: '5+', label: 'خطوط إنتاج', suffix: '' },
-        { value: 'GMP', label: 'معايير معتمدة', suffix: '' },
-      ],
+      badge: 'عن الشركة',
+      statement:
+        'نحن شركة تصنيع دوائي تركّز على إنتاج أدوية آمنة ومدروسة تجمع بين الإرث العراقي وممارسات التصنيع الجيد الأوروبية ورعاية المرضى اليومية.',
     },
 
     // Footer
     footer: {
-      description: 'نيبور فارما — أحدث شركة تصنيع دوائي في العراق، تجمع بين الإرث الميسوبوتامي العريق وتقنيات GMP الأوروبية الحديثة.',
+      description: 'نيبور فارما — أحدث شركة تصنيع دوائي في العراق، تجمع بين إرث بلاد الرافدين العريق وتقنيات التصنيع الأوروبية الحديثة وفق ممارسات التصنيع الجيد.',
       quickLinks: 'روابط سريعة',
       products: 'المنتجات',
       company: 'الشركة',
@@ -788,7 +797,7 @@ export const translations = {
       quality: 'الجودة',
       faq: 'الأسئلة الشائعة',
       research: 'البحث والتطوير',
-      privacy: 'سياسة الخصوصية',
+      privacy: ' الخصوصية',
       terms: 'شروط الخدمة',
       sitemap: 'خريطة الموقع',
       newsletter: 'النشرة الإخبارية',
@@ -801,6 +810,7 @@ export const translations = {
 
     // CTA
     cta: {
+      badge: 'شراكة معنا',
       title: 'هل أنت مستعد للشراكة مع أبرز شركة تصنيع دوائي في العراق؟',
       subtitle: 'سواء كنت تبحث عن منتجات دوائية عالية الجودة أو شراكات توزيع أو فرص استثمارية — نيبور فارما هي شريكك الموثوق.',
       contact: 'اتصل بنا',

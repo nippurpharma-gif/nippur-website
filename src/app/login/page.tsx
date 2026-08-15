@@ -4,6 +4,7 @@ import { LoginPage } from "@/components/dashboard/LoginPage";
 export const metadata = {
   title: "Login | NIPPUR Pharma",
   description: "Admin Login",
+  robots: { index: false, follow: false },
 };
 
 export default function LoginRoute() {

@@ -1,33 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAppStore } from '@/store';
+import { useAppStore, type SiteSettings } from '@/store';
+import type { Locale } from '@/lib/i18n/translations';
+import { persistLocale } from '@/lib/locale';
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 1000 * 60 * 5,
-        retry: 1,
-      },
-    },
-  }));
-  const { locale, setLocale } = useAppStore();
+export function AppProvider({
+  children,
+  initialLocale,
+  initialSettings,
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+  initialSettings?: SiteSettings | null;
+}) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 1000 * 60 * 5,
+            retry: 1,
+          },
+        },
+      }),
+  );
+  const { locale, setLocale, setSiteSettings, setSettingsFetched } = useAppStore();
+
+  useLayoutEffect(() => {
+    if (initialLocale) {
+      setLocale(initialLocale);
+    }
+    const saved = localStorage.getItem('nippur-locale') as Locale | null;
+    if (saved === 'en' || saved === 'ar') {
+      setLocale(saved);
+      persistLocale(saved);
+    }
+    if (initialSettings) {
+      setSiteSettings(initialSettings);
+      setSettingsFetched(true);
+    }
+  }, [initialLocale, initialSettings, setLocale, setSiteSettings, setSettingsFetched]);
 
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
   }, [locale]);
-
-  // Initialize locale from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('nippur-locale') as 'en' | 'ar' | null;
-    if (saved) {
-      setLocale(saved);
-    }
-  }, [setLocale]);
 
   return (
     <QueryClientProvider client={queryClient}>

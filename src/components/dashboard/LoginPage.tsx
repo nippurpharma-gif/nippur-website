@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Lock, AlertCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Lock, AlertCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store';
 
-const ADMIN_PASSWORD = 'nippur2024';
-
 export function LoginPage() {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,18 +31,19 @@ export function LoginPage() {
     try {
       const res = await signIn('credentials', {
         redirect: false,
+        email: email.trim().toLowerCase(),
         password,
         callbackUrl,
       });
 
       if (res?.error) {
-        setError(isAr ? 'كلمة المرور غير صحيحة' : 'Incorrect password');
+        setError(isAr ? 'البريد أو كلمة المرور غير صحيحة' : 'Incorrect email or password');
         setLoading(false);
       } else {
         router.push(callbackUrl);
         router.refresh();
       }
-    } catch (err) {
+    } catch {
       setError(isAr ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'An error occurred, please try again');
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export function LoginPage() {
                 {isAr ? 'لوحة التحكم' : 'Admin Dashboard'}
               </h1>
               <p className="text-sm text-white/50 mt-1">
-                {isAr ? 'أدخل كلمة المرور للوصول' : 'Enter password to access'}
+                {isAr ? 'سجّل الدخول بحسابك الإداري' : 'Sign in with your admin account'}
               </p>
             </motion.div>
           </CardHeader>
@@ -103,21 +103,44 @@ export function LoginPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
+                className="space-y-4"
               >
-                <Label htmlFor="password" className="text-white/70 text-sm mb-2 block">
-                  {isAr ? 'كلمة المرور' : 'Password'}
-                </Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={isAr ? 'أدخل كلمة المرور' : 'Enter password'}
-                    className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-brand-500 focus:ring-brand-500/20 h-12"
-                    autoFocus
-                  />
+                <div>
+                  <Label htmlFor="email" className="text-white/70 text-sm mb-2 block">
+                    {isAr ? 'البريد الإلكتروني' : 'Email'}
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="username"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="admin@nippurpharma.iq"
+                      className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="password" className="text-white/70 text-sm mb-2 block">
+                    {isAr ? 'كلمة المرور' : 'Password'}
+                  </Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Input
+                      id="password"
+                      type="password"
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={isAr ? 'أدخل كلمة المرور' : 'Enter password'}
+                      className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-brand-500 focus:ring-brand-500/20 h-12"
+                      required
+                    />
+                  </div>
                 </div>
               </motion.div>
 
@@ -139,8 +162,8 @@ export function LoginPage() {
               >
                 <Button
                   type="submit"
-                  disabled={loading || !password}
-                  className="w-full mt-6 h-12 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-base transition-all duration-200"
+                  disabled={loading || !password || !email}
+                  className="w-full mt-6 h-12 bg-brand-600 hover:bg-brand-500 text-white font-semibold text-base transition-all duration-200 rounded-full"
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">

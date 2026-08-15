@@ -1,81 +1,150 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { useRef } from 'react';
 import { useAppStore } from '@/store';
-import { SectionWrapper, StaggerContainer, StaggerItem } from './SectionWrapper';
+import { useProductionStats } from '@/hooks/use-production-stats';
+import { gsap, useGSAP, gsapCountUp, prefersReducedMotion, EASE } from '@/lib/gsap-site';
 
-function AnimatedCounter({
-  value,
-  suffix,
-}: {
-  value: string;
-  suffix: string;
-}) {
+function AnimatedCounter({ value }: { value: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true, margin: '-20px' });
-  const numericPart = value.replace(/[^0-9]/g, '');
-  const hasPlus = value.includes('+');
-  const isNumeric = numericPart.length > 0 && !isNaN(Number(numericPart));
-  const targetNum = isNumeric ? parseInt(numericPart, 10) : 0;
-  const [displayValue, setDisplayValue] = useState(isNumeric ? '0' : value);
 
-  useEffect(() => {
-    if (!isInView || !isNumeric) return;
+  const match = value.match(/^(\D*)(\d+)(.*)$/);
+  const isNumeric = Boolean(match);
+  const targetNum = match ? parseInt(match[2], 10) : 0;
+  const valueSuffix = match ? match[3] : '';
+  const valuePrefix = match ? match[1] : '';
 
-    const duration = 2000;
-    const startTime = Date.now();
-    let rafId: number;
+  useGSAP(
+    () => {
+      const el = ref.current;
+      if (!el) return;
 
-    const step = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.round(eased * targetNum);
-      const formatted = current.toLocaleString('en-US');
-      setDisplayValue(hasPlus ? `${formatted}+` : formatted);
-
-      if (progress < 1) {
-        rafId = requestAnimationFrame(step);
+      if (!isNumeric) {
+        el.textContent = value;
+        return;
       }
-    };
 
-    rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
-  }, [isInView, isNumeric, targetNum, hasPlus]);
+      gsapCountUp(el, targetNum, {
+        prefix: valuePrefix,
+        suffix: valueSuffix,
+        duration: prefersReducedMotion() ? 0 : 1.35,
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 90%',
+          toggleActions: 'play none none none',
+        },
+      });
+    },
+    {
+      scope: ref,
+      dependencies: [value, isNumeric, targetNum, valuePrefix, valueSuffix],
+    },
+  );
 
   return (
-    <span ref={ref} className="bg-gradient-to-r from-brand-300 via-teal-200 to-brand-400 bg-clip-text text-transparent">
-      {displayValue}
-      {suffix && isNumeric && (
-        <span className="text-brand-200/50 text-sm font-normal ms-1">{suffix}</span>
-      )}
+    <span ref={ref} className="tabular text-[var(--ink)]">
+      {isNumeric ? `${valuePrefix}0${valueSuffix}` : value}
     </span>
   );
 }
 
+/** Forma-style: label column + content column (statement + production capacity) */
 export function StatsSection() {
-  const { t } = useAppStore();
+  const { t, locale } = useAppStore();
+  const capacityItems = useProductionStats();
+  const rootRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      const root = rootRef.current;
+      if (!root) return;
+
+      const label = root.querySelector<HTMLElement>('[data-stats="label"]');
+      const statement = root.querySelector<HTMLElement>('[data-stats="statement"]');
+      const cards = gsap.utils.toArray<HTMLElement>('[data-stat-card]', root);
+      const targets = [label, statement, ...cards].filter(Boolean) as HTMLElement[];
+
+      // Never leave copy at opacity 0 — contrast must stay readable
+      gsap.set(targets, { autoAlpha: 1, clearProps: 'opacity,visibility' });
+
+      if (prefersReducedMotion()) {
+        gsap.set(targets, { y: 0 });
+        return;
+      }
+
+      gsap.from(targets, {
+        y: 18,
+        duration: 0.65,
+        stagger: 0.06,
+        ease: EASE,
+        immediateRender: false,
+        scrollTrigger: {
+          trigger: root,
+          start: 'top 85%',
+          toggleActions: 'play none none none',
+        },
+      });
+    },
+    { scope: rootRef, dependencies: [locale, capacityItems.length] },
+  );
 
   return (
-    <SectionWrapper id="stats" badge={t.stats.badge} dark>
-      <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-        {t.stats.items.map((item, index) => (
-          <StaggerItem key={index}>
-            <div className="group relative rounded-xl border border-brand-800/40 bg-brand-900/30 backdrop-blur-sm p-6 lg:p-8 text-center hover:border-brand-600/40 hover:bg-brand-900/50 transition-all duration-300">
-              <div className="absolute inset-0 rounded-xl bg-gradient-to-b from-brand-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="relative">
-                <div className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-none">
-                  <AnimatedCounter value={item.value} suffix={item.suffix} />
+    <section
+      id="stats"
+      ref={rootRef}
+      className="relative z-10 overflow-hidden bg-[#F7F9FC] text-[var(--ink)] section-pad"
+      aria-labelledby="stats-statement"
+    >
+      <div className="site-container">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+          <div
+            data-stats="label"
+            className="flex shrink-0 items-center gap-2.5 self-start"
+          >
+            <span
+              className="size-1.5 shrink-0 rounded-full bg-[var(--ink)]"
+              aria-hidden
+            />
+            <span className="text-sm font-medium text-[var(--ink-secondary)] tracking-[-0.01em]">
+              {t.stats.badge}
+            </span>
+          </div>
+
+          <div data-stats="content" className="min-w-0 w-full lg:max-w-[52rem] xl:max-w-[58rem]">
+            <h2
+              id="stats-statement"
+              data-stats="statement"
+              className={`text-[clamp(1.5rem,3.2vw,2.75rem)] font-semibold text-[var(--ink)] mb-14 sm:mb-16 lg:mb-20 w-full ${
+                locale === 'ar'
+                  ? 'leading-[1.45] tracking-normal'
+                  : 'leading-[1.15] tracking-[-0.035em]'
+              }`}
+            >
+              {t.stats.statement}
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-10 lg:gap-x-12 lg:gap-y-12">
+              {capacityItems.map((item) => (
+                <div key={item.label} data-stat-card className="min-w-0">
+                  <p
+                    className={`text-[clamp(2.25rem,5vw,3.75rem)] font-semibold text-[var(--ink)] leading-none ${
+                      locale === 'ar' ? 'tracking-normal' : 'tracking-[-0.04em]'
+                    }`}
+                  >
+                    <AnimatedCounter value={item.value} />
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-[var(--ink-secondary)] tracking-[-0.01em]">
+                    {item.unit}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-[var(--ink)] leading-snug tracking-[-0.01em]">
+                    {item.label}
+                  </p>
                 </div>
-                <p className="mt-3 text-sm text-brand-200/60 font-medium">
-                  {item.label}
-                </p>
-              </div>
+              ))}
             </div>
-          </StaggerItem>
-        ))}
-      </StaggerContainer>
-    </SectionWrapper>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

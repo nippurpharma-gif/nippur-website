@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getAdminSession, requireAdmin } from '@/lib/auth';
+import { z } from 'zod';
+import { mediaUrlSchema } from '@/lib/validation';
+import { parseListQuery } from '@/lib/pagination';
 
-export async function GET() {
+const partnerSchema = z.object({
+  nameEn: z.string().min(1).max(200),
+  nameAr: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  logoUrl: mediaUrlSchema.optional().or(z.literal('')),
+  sortOrder: z.number().int().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export async function GET(request: NextRequest) {
   try {
+    const session = await getAdminSession();
+    const { take, skip } = parseListQuery(request);
     const partners = await db.partner.findMany({
+      where: session ? undefined : { isActive: true },
       orderBy: { sortOrder: 'asc' },
+      take,
+      skip,
     });
     return NextResponse.json(partners);
   } catch {
@@ -13,22 +31,25 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const body = await request.json();
-    const { nameEn, nameAr, description, logoUrl, sortOrder, isActive } = body;
-
-    if (!nameEn || !nameAr) {
+    const parsed = partnerSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    const data = parsed.data;
     const partner = await db.partner.create({
       data: {
-        nameEn: nameEn || '',
-        nameAr: nameAr || '',
-        description: description || '',
-        logoUrl: logoUrl || '',
-        sortOrder: sortOrder ?? 0,
-        isActive: isActive ?? true,
+        nameEn: data.nameEn,
+        nameAr: data.nameAr,
+        description: data.description || '',
+        logoUrl: data.logoUrl || '',
+        sortOrder: data.sortOrder ?? 0,
+        isActive: data.isActive ?? true,
       },
     });
 
@@ -39,17 +60,24 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const body = await request.json();
-    const { id, ...data } = body;
-
+    const { id, ...rest } = body;
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
+    const parsed = partnerSchema.partial().safeParse(rest);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid partner data' }, { status: 400 });
+    }
+
     const partner = await db.partner.update({
-      where: { id },
-      data,
+      where: { id: Number(id) },
+      data: parsed.data,
     });
 
     return NextResponse.json(partner);
@@ -59,15 +87,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
-    await db.partner.delete({ where: { id: parseInt(id) } });
+    await db.partner.delete({ where: { id: parseInt(id, 10) } });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Failed to delete partner' }, { status: 500 });
