@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Explicit sources — Turbopack auto-scan often drops utility classes in production */
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
