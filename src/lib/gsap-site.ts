@@ -64,7 +64,8 @@ export function revealOnScroll(
   }
 
   const y = options?.y ?? REVEAL_Y;
-  gsap.set(els, { opacity: 0, y, force3D: true });
+  // Prefer composite-friendly transforms without forcing a sticky-breaking layer
+  gsap.set(els, { opacity: 0, y });
 
   return gsap.to(els, {
     opacity: 1,
@@ -74,6 +75,7 @@ export function revealOnScroll(
     delay: options?.delay ?? 0,
     ease: EASE,
     overwrite: 'auto',
+    force3D: false,
     scrollTrigger: {
       trigger: (options?.trigger ?? els[0]) as Element,
       start: options?.start ?? SCROLL.default,
@@ -83,7 +85,7 @@ export function revealOnScroll(
   });
 }
 
-/** Hero entrance — set → cascade (no from-flicker) */
+/** Hero entrance — opacity-only on copy (no y/force3D) so sticky stacking stays intact */
 export function createHeroGsapTimeline(root: HTMLElement): gsap.core.Timeline | null {
   const brand = root.querySelector<HTMLElement>('[data-hero="brand"]');
   const label = root.querySelector<HTMLElement>('[data-hero="label"]');
@@ -94,48 +96,57 @@ export function createHeroGsapTimeline(root: HTMLElement): gsap.core.Timeline | 
   const nodes = [brand, label, title, subtitle, cta].filter(Boolean) as HTMLElement[];
 
   if (prefersReducedMotion()) {
-    clearReveal(nodes);
+    gsap.set(nodes, { clearProps: 'opacity' });
     return null;
   }
 
-  gsap.set(nodes, { opacity: 0, y: 20, force3D: true });
+  // Opacity only — transform on sticky descendants breaks z-index vs following content
+  gsap.set(nodes, { opacity: 0 });
 
   const tl = gsap.timeline({ defaults: { ease: EASE, overwrite: 'auto' } });
 
   if (bg) {
     gsap.fromTo(
       bg,
-      { scale: 1.06 },
-      { scale: 1, duration: 1.8, ease: 'power1.out' },
+      { scale: 1.05 },
+      { scale: 1, duration: 1.8, ease: 'power1.out', force3D: false },
     );
   }
 
-  if (brand) tl.to(brand, { opacity: 1, y: 0, duration: 0.55 }, 0.12);
-  if (label) tl.to(label, { opacity: 1, y: 0, duration: 0.55 }, '-=0.35');
-  if (title) tl.to(title, { opacity: 1, y: 0, duration: 0.85 }, '-=0.28');
-  if (subtitle) tl.to(subtitle, { opacity: 1, y: 0, duration: 0.65 }, '-=0.5');
-  if (cta) tl.to(cta, { opacity: 1, y: 0, duration: 0.55 }, '-=0.4');
+  if (brand) tl.to(brand, { opacity: 1, duration: 0.55 }, 0.12);
+  if (label) tl.to(label, { opacity: 1, duration: 0.55 }, '-=0.35');
+  if (title) tl.to(title, { opacity: 1, duration: 0.85 }, '-=0.28');
+  if (subtitle) tl.to(subtitle, { opacity: 1, duration: 0.65 }, '-=0.5');
+  if (cta) tl.to(cta, { opacity: 1, duration: 0.55 }, '-=0.4');
 
   return tl;
 }
 
-/** Soft scrub only — keep motion subtle so sticky hero does not jitter */
+/**
+ * Parallax the media layer only. Keep force3D off so the sticky hero
+ * does not promote above the page content stack.
+ */
 export function createHeroScrollParallax(root: HTMLElement) {
   if (prefersReducedMotion()) return null;
 
   const bg = root.querySelector<HTMLElement>('[data-hero="bg"]');
   if (!bg) return null;
 
-  return gsap.to(bg, {
-    yPercent: 12,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: root,
-      start: 'top top',
-      end: 'bottom top',
-      scrub: 1.2,
+  return gsap.fromTo(
+    bg,
+    { yPercent: -4 },
+    {
+      yPercent: 8,
+      ease: 'none',
+      force3D: false,
+      scrollTrigger: {
+        trigger: root,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 1.4,
+      },
     },
-  });
+  );
 }
 
 export function gsapCountUp(
@@ -195,10 +206,10 @@ export function revealSectionHeader(
     return;
   }
 
-  gsap.set(nodes, { opacity: 0, y: 22, force3D: true });
+  gsap.set(nodes, { opacity: 0, y: 22 });
 
   const tl = gsap.timeline({
-    defaults: { ease: EASE, overwrite: 'auto' },
+    defaults: { ease: EASE, overwrite: 'auto', force3D: false },
     scrollTrigger: {
       trigger: scope,
       start: options?.start ?? SCROLL.early,

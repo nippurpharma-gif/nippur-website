@@ -32,11 +32,9 @@ function fitTitleToWidth(el: HTMLElement, container: HTMLElement) {
     return;
   }
 
-  // Exact fill — no artificial 180px cap (that left empty sides on wide screens)
   const next = (target / measured) * 100;
   el.style.fontSize = `${Math.max(16, next)}px`;
 
-  // Second pass corrects sub-pixel / tracking drift
   const after = el.getBoundingClientRect().width;
   if (after > 0 && Math.abs(after - target) > 0.5) {
     el.style.fontSize = `${Math.max(16, next * (target / after))}px`;
@@ -85,7 +83,6 @@ export function HeroSection() {
       if (!root) return;
 
       const start = () => {
-        // Re-fit after fonts settle, then animate
         const wrap = titleWrapRef.current;
         const title = titleRef.current;
         if (wrap && title) fitTitleToWidth(title, wrap);
@@ -99,7 +96,7 @@ export function HeroSection() {
         void document.fonts.ready.then(start);
       }
     },
-    { scope: rootRef, dependencies: [locale] },
+    { scope: rootRef, dependencies: [locale], revertOnUpdate: true },
   );
 
   const brandTitle = locale === 'ar' ? 'نيـبـور فـارمـا' : 'Nippur Pharma';
@@ -110,10 +107,11 @@ export function HeroSection() {
       ref={rootRef}
       className="sticky top-0 z-0 min-h-[100svh] flex flex-col justify-end overflow-hidden bg-neutral-950 pb-5 sm:pb-8 lg:pb-10"
     >
-      <div className="absolute inset-0 z-0">
+      {/* Media layer is isolated so GSAP transforms never lift the sticky section above page content */}
+      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
         <div
           data-hero="bg"
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
+          className="absolute inset-[-8%] bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/images/factory-real.jpeg')" }}
           role="img"
           aria-label={
@@ -128,7 +126,7 @@ export function HeroSection() {
 
       <div
         key={locale}
-        className="relative z-10 site-container flex flex-col justify-end w-full"
+        className="relative z-[1] site-container flex flex-col justify-end w-full"
       >
         <div className="max-w-md lg:max-w-lg space-y-3 mb-5 lg:mb-8">
           <p
@@ -138,7 +136,7 @@ export function HeroSection() {
             {t.hero.subtitle}
           </p>
 
-          <div data-hero="cta" className="relative z-20 pt-0.5">
+          <div data-hero="cta" className="relative pt-0.5">
             <button
               type="button"
               onClick={() => scrollToSection('products')}
@@ -149,15 +147,15 @@ export function HeroSection() {
             </button>
           </div>
         </div>
-          {/* Brand Title */}
-        <div ref={titleWrapRef} className="w-full min-w-0">
+
+        <div ref={titleWrapRef} className="w-full min-w-0 overflow-hidden">
           <h1
             ref={titleRef}
             data-hero="title"
             className={`pointer-events-none block w-full leading-[0.9] text-white select-none whitespace-nowrap ${
               locale === 'ar'
-                ? 'tracking-normal pb-15 lg:pb-0 lg:mt-[-100px]'
-                : 'tracking-[-0.045em] font-medium pb-15 xl:pb-0'
+                ? 'tracking-normal pb-6 sm:pb-8'
+                : 'tracking-[-0.045em] font-medium pb-6 sm:pb-8 xl:pb-0'
             }`}
             style={{ fontSize: 'clamp(1.5rem, 12vw, 8rem)' }}
           >

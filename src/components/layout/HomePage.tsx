@@ -64,7 +64,8 @@ export function HomePage({ data }: { data: HomePageData }) {
       <Header />
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <HeroSection />
-        <div className="relative z-10 bg-background">
+        {/* isolate + solid bg keeps sticky hero (z-0) strictly underneath while scrolling */}
+        <div className="relative z-10 isolate bg-background shadow-[0_-1px_0_rgba(10,37,68,0.04)]">
           <StatsSection />
           <AboutSection />
           {managedOrder.map((key) => sectionMap[key])}
