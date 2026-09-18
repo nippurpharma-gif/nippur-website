@@ -14,6 +14,7 @@ export async function POST() {
 
     const articles = [
       {
+        slug: 'nippur-pharma-receives-gmp-certification',
         titleEn: 'NIPPUR Pharma Receives GMP Certification',
         titleAr: 'نيبور فارما تحصل على شهادة GMP',
         excerptEn:
@@ -30,6 +31,7 @@ export async function POST() {
         isPublished: true,
       },
       {
+        slug: 'new-cephalosporin-production-line-inaugurated',
         titleEn: 'New Cephalosporin Production Line Inaugurated',
         titleAr: 'افتتاح خط إنتاج سيفالوسبورين الجديد',
         excerptEn:

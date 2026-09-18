@@ -1,24 +1,25 @@
 'use client';
 
-import { memo, useState, useEffect, useCallback } from 'react';
-import { MapPin, Clock, CheckCircle, Briefcase, Loader2 } from 'lucide-react';
+import { memo, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { MapPin, Clock, CheckCircle, Briefcase, Loader2, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SectionWrapper, FadeIn, StaggerContainer, StaggerItem } from '@/components/sections/SectionWrapper';
 import { Button } from '@/components/ui/button';
 import { SurfaceCard } from '@/components/ui/surface-card';
-import { ApplicationFormDialog } from './ApplicationFormDialog';
 
 interface JobPosition {
   id: number;
+  slug?: string;
   titleEn: string;
   titleAr: string;
   departmentEn: string;
   departmentAr: string;
   location: string;
   type: string;
+  experienceLevel?: string;
   descriptionEn: string;
   descriptionAr: string;
-  applicationEmail: string;
   sortOrder: number;
   isActive: boolean;
 }
@@ -28,30 +29,41 @@ const JobCard = memo(function JobCard({
   department,
   location,
   type,
+  experienceLevel,
   description,
-  applyLabel,
-  onApply,
+  viewLabel,
+  href,
+  isAr,
 }: {
   title: string;
   department: string;
   location: string;
   type: string;
+  experienceLevel?: string;
   description: string;
-  applyLabel: string;
-  onApply: (title: string, department: string) => void;
+  viewLabel: string;
+  href: string;
+  isAr: boolean;
 }) {
   return (
-    <SurfaceCard hover className="h-full p-6 flex flex-col justify-between">
-      <div>
-        <div className="mb-3">
-          <span className="inline-block text-xs font-medium bg-brand-50 text-brand-700 px-2.5 py-0.5 rounded-md">
+    <Link href={href} className="group block h-full">
+      <SurfaceCard hover className="h-full p-6 flex flex-col">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <span className="inline-block text-[11px] font-semibold tracking-wide uppercase bg-brand-50 text-brand-700 px-2.5 py-1 rounded-md">
             {department}
           </span>
+          {experienceLevel ? (
+            <span className="text-[11px] font-medium text-[var(--ink-tertiary)] shrink-0">
+              {experienceLevel}
+            </span>
+          ) : null}
         </div>
+
         <h3 className="text-lg font-bold text-[var(--ink)] leading-snug group-hover:text-brand-700 transition-colors mb-3">
           {title}
         </h3>
-        <div className="flex items-center gap-4 text-xs font-medium text-[var(--ink-secondary)] mb-4">
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-medium text-[var(--ink-secondary)] mb-4">
           <span className="flex items-center gap-1.5">
             <MapPin className="size-3.5 text-brand-600" />
             {location}
@@ -61,23 +73,29 @@ const JobCard = memo(function JobCard({
             {type}
           </span>
         </div>
-        <p className="text-sm text-[var(--ink-secondary)] leading-relaxed line-clamp-3 mb-6">
-          {description}
-        </p>
-      </div>
-      <Button
-        className="w-full bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-none"
-        onClick={() => onApply(title, department)}
-      >
-        <Briefcase className="size-4 me-2" />
-        {applyLabel}
-      </Button>
-    </SurfaceCard>
+
+        {description ? (
+          <p className="text-sm text-[var(--ink-secondary)] leading-relaxed line-clamp-3 flex-1 mb-6">
+            {description}
+          </p>
+        ) : (
+          <div className="flex-1 mb-6" />
+        )}
+
+        <div className="mt-auto pt-4 border-t border-[rgba(10,37,68,0.06)] flex items-center justify-between gap-2 text-sm font-semibold text-brand-700">
+          <span className="inline-flex items-center gap-1.5 group-hover:gap-2.5 transition-all">
+            {viewLabel}
+            <ArrowRight className={`size-4 ${isAr ? 'rotate-180' : ''}`} />
+          </span>
+        </div>
+      </SurfaceCard>
+    </Link>
   );
 });
 
 export function CareersSection({ initialJobs }: { initialJobs?: JobPosition[] }) {
   const { t, locale } = useAppStore();
+  const isAr = locale === 'ar';
   const [jobs, setJobs] = useState<JobPosition[]>(
     () =>
       initialJobs
@@ -85,9 +103,6 @@ export function CareersSection({ initialJobs }: { initialJobs?: JobPosition[] })
         .sort((a, b) => a.sortOrder - b.sortOrder) ?? [],
   );
   const [loading, setLoading] = useState(!initialJobs);
-  const [applyPosition, setApplyPosition] = useState<string | null>(null);
-  const [applyDepartment, setApplyDepartment] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchJobs() {
@@ -110,20 +125,11 @@ export function CareersSection({ initialJobs }: { initialJobs?: JobPosition[] })
     fetchJobs();
   }, [initialJobs]);
 
-  const handleApply = useCallback((title: string, department: string) => {
-    setApplyDepartment(department);
-    setApplyPosition(title);
-    setDialogOpen(true);
-  }, []);
-
-  const handleCloseDialog = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) setApplyPosition(null);
-  };
-
   const getTitle = (job: JobPosition) => (locale === 'ar' ? job.titleAr : job.titleEn);
   const getDepartment = (job: JobPosition) => (locale === 'ar' ? job.departmentAr : job.departmentEn);
   const getDescription = (job: JobPosition) => (locale === 'ar' ? job.descriptionAr : job.descriptionEn);
+
+  const visibleJobs = jobs.slice(0, 4);
 
   return (
     <SectionWrapper
@@ -141,24 +147,32 @@ export function CareersSection({ initialJobs }: { initialJobs?: JobPosition[] })
           ) : jobs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[var(--ink-secondary)]">
               <Briefcase className="size-12 mb-4 opacity-30" />
-              <p className="text-lg font-medium text-[var(--ink)]">No open positions at the moment</p>
-              <p className="text-sm mt-1 text-[var(--ink-secondary)]">Please check back later</p>
+              <p className="text-lg font-medium text-[var(--ink)]">
+                {isAr ? 'لا توجد وظائف مفتوحة حالياً' : 'No open positions at the moment'}
+              </p>
+              <p className="text-sm mt-1 text-[var(--ink-secondary)]">
+                {isAr ? 'يرجى المراجعة لاحقاً' : 'Please check back later'}
+              </p>
             </div>
           ) : (
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {jobs.map((job) => (
-                <StaggerItem key={job.id}>
-                  <JobCard
-                    title={getTitle(job)}
-                    department={getDepartment(job)}
-                    location={job.location}
-                    type={job.type}
-                    description={getDescription(job)}
-                    applyLabel={t.careers.apply}
-                    onApply={handleApply}
-                  />
-                </StaggerItem>
-              ))}
+              {visibleJobs.map((job) =>
+                job.slug ? (
+                  <StaggerItem key={job.id}>
+                    <JobCard
+                      title={getTitle(job)}
+                      department={getDepartment(job)}
+                      location={job.location}
+                      type={job.type}
+                      experienceLevel={job.experienceLevel}
+                      description={getDescription(job)}
+                      viewLabel={isAr ? 'عرض الوظيفة' : 'View role'}
+                      href={`/careers/${job.slug}`}
+                      isAr={isAr}
+                    />
+                  </StaggerItem>
+                ) : null,
+              )}
             </StaggerContainer>
           )}
         </div>
@@ -185,12 +199,20 @@ export function CareersSection({ initialJobs }: { initialJobs?: JobPosition[] })
         </div>
       </div>
 
-      <ApplicationFormDialog
-        position={applyPosition}
-        department={applyDepartment}
-        open={dialogOpen}
-        onOpenChange={handleCloseDialog}
-      />
+      {jobs.length > 0 && (
+        <FadeIn className="mt-10 flex justify-center">
+          <Button
+            asChild
+            variant="outline"
+            className="border-[rgba(10,37,68,0.12)] text-[var(--ink)] hover:bg-brand-50 hover:border-brand-200 hover:text-brand-700 rounded-full px-6"
+          >
+            <Link href="/careers">
+              <Briefcase className="size-4 me-2" />
+              {t.careers.allPositions}
+            </Link>
+          </Button>
+        </FadeIn>
+      )}
     </SectionWrapper>
   );
 }

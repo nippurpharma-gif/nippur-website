@@ -4,6 +4,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
 import { rateLimit } from '@/lib/rate-limit';
+import { ensureAuthUrl } from '@/lib/site-url';
+
+ensureAuthUrl();
 
 function resolveAuthSecret(): string | undefined {
   const fromEnv = process.env.NEXTAUTH_SECRET?.trim();
@@ -16,6 +19,20 @@ function resolveAuthSecret(): string | undefined {
 
   console.warn('[auth] Using development fallback NEXTAUTH_SECRET');
   return 'dev-only-nippur-secret-change-me';
+}
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export const authOptions: AuthOptions = {
@@ -41,13 +58,31 @@ export const authOptions: AuthOptions = {
         const ipRaw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
         const ip = ipRaw?.split(',')[0]?.trim() || 'unknown';
 
-        const limited = await rateLimit(`login:${ip}:${email}`, {
-          limit: 8,
-          windowMs: 15 * 60 * 1000,
-        });
-        if (!limited.ok) return null;
+        try {
+          const limited = await withTimeout(
+            rateLimit(`login:${ip}:${email}`, {
+              limit: 8,
+              windowMs: 15 * 60 * 1000,
+            }),
+            2500,
+            'rate-limit',
+          );
+          if (!limited.ok) return null;
+        } catch (error) {
+          console.error('[auth] rate limit failed', error);
+        }
 
-        const user = await db.adminUser.findUnique({ where: { email } });
+        let user;
+        try {
+          user = await withTimeout(
+            db.adminUser.findUnique({ where: { email } }),
+            8000,
+            'admin lookup',
+          );
+        } catch (error) {
+          console.error('[auth] admin lookup failed', error);
+          return null;
+        }
         if (!user || !user.isActive) return null;
         if (!verifyPassword(password, user.passwordHash)) return null;
 
@@ -62,6 +97,7 @@ export const authOptions: AuthOptions = {
   ],
   session: { strategy: 'jwt', maxAge: 8 * 60 * 60 },
   secret: resolveAuthSecret(),
+  useSecureCookies: process.env.NODE_ENV === 'production',
   pages: { signIn: '/login' },
   callbacks: {
     async jwt({ token, user }) {

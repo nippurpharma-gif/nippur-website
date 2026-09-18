@@ -8,8 +8,29 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useAppStore } from '@/store';
+
+function safeCallbackUrl(value: string | null): string {
+  if (value && value.startsWith('/') && !value.startsWith('//')) return value;
+  return '/admin';
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,9 +38,8 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { locale } = useAppStore();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/admin';
+  const callbackUrl = safeCallbackUrl(searchParams.get('callbackUrl'));
 
   const isAr = locale === 'ar';
 
@@ -29,22 +49,25 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await signIn('credentials', {
-        redirect: false,
-        email: email.trim().toLowerCase(),
-        password,
-        callbackUrl,
-      });
+      const res = await withTimeout(
+        signIn('credentials', {
+          redirect: false,
+          email: email.trim().toLowerCase(),
+          password,
+          callbackUrl,
+        }),
+        20000,
+      );
 
-      if (res?.error) {
+      if (!res || res.error || res.ok === false) {
         setError(isAr ? 'البريد أو كلمة المرور غير صحيحة' : 'Incorrect email or password');
         setLoading(false);
-      } else {
-        router.push(callbackUrl);
-        router.refresh();
+        return;
       }
+
+      window.location.assign(callbackUrl);
     } catch {
-      setError(isAr ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'An error occurred, please try again');
+      setError(isAr ? 'تعذر إكمال تسجيل الدخول، حاول مرة أخرى' : 'Sign-in timed out, please try again');
       setLoading(false);
     }
   };

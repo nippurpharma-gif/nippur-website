@@ -1,8 +1,30 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+
+const projectRoot = path.resolve(__dirname);
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */
+  outputFileTracingRoot: projectRoot,
+  turbopack: {
+    resolveAlias: {
+      tailwindcss: path.join(projectRoot, "node_modules/tailwindcss"),
+      "tw-animate-css": path.join(projectRoot, "node_modules/tw-animate-css"),
+    },
+  },
+  webpack: (config) => {
+    config.context = projectRoot;
+    config.resolve.modules = [
+      path.join(projectRoot, "node_modules"),
+      ...(config.resolve.modules || ["node_modules"]),
+    ];
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      tailwindcss: path.join(projectRoot, "node_modules/tailwindcss"),
+      "tw-animate-css": path.join(projectRoot, "node_modules/tw-animate-css"),
+    };
+    return config;
+  },
   typescript: {
     ignoreBuildErrors: true,
   },

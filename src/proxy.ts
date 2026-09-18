@@ -1,5 +1,8 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+import { NextRequest, NextResponse } from 'next/server';
+import { ensureAuthUrl } from '@/lib/site-url';
+
+ensureAuthUrl();
 
 /** Exact public API paths (method-aware). Everything else under /api requires a session. */
 const PUBLIC_GET = new Set([
@@ -13,59 +16,63 @@ const PUBLIC_GET = new Set([
 const PUBLIC_POST = new Set(['/api/applications', '/api/contact']);
 
 function normalizePath(pathname: string): string {
-  // Strip trailing slash except root
   if (pathname.length > 1 && pathname.endsWith('/')) {
     return pathname.slice(0, -1);
   }
   return pathname;
 }
 
-export default withAuth(
-  function proxy(req) {
-    const pathname = normalizePath(req.nextUrl.pathname);
-    const isApi = pathname.startsWith('/api/');
-    const isAuthRoute = pathname.startsWith('/api/auth');
+function loginRedirect(req: NextRequest) {
+  const url = req.nextUrl.clone();
+  url.pathname = '/login';
+  url.search = '';
+  url.searchParams.set('callbackUrl', `${req.nextUrl.pathname}${req.nextUrl.search}`);
+  return NextResponse.redirect(url);
+}
 
-    if (isApi && !isAuthRoute) {
-      const method = req.method.toUpperCase();
-      const isPublic =
-        (method === 'GET' && PUBLIC_GET.has(pathname)) ||
-        (method === 'POST' && PUBLIC_POST.has(pathname));
+export async function proxy(req: NextRequest) {
+  const pathname = normalizePath(req.nextUrl.pathname);
+  const isApi = pathname.startsWith('/api/');
+  const isAuthRoute = pathname.startsWith('/api/auth');
 
-      if (isPublic) {
-        return NextResponse.next();
-      }
+  if (isAuthRoute) {
+    return NextResponse.next();
+  }
 
-      if (!req.nextauth.token) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+  const forwardedProto = req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie:
+      process.env.NODE_ENV === 'production' ||
+      req.nextUrl.protocol === 'https:' ||
+      forwardedProto === 'https',
+  });
+
+  if (pathname.startsWith('/admin') && !token) {
+    return loginRedirect(req);
+  }
+
+  if (isApi) {
+    const method = req.method.toUpperCase();
+    const isPublic =
+      (method === 'GET' && PUBLIC_GET.has(pathname)) ||
+      (method === 'POST' && PUBLIC_POST.has(pathname));
+
+    if (isPublic) {
+      return NextResponse.next();
     }
 
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ req, token }) => {
-        const pathname = normalizePath(req.nextUrl.pathname);
-        const isApi = pathname.startsWith('/api/');
-        const isAuthRoute = pathname.startsWith('/api/auth');
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  }
 
-        // API auth is enforced in the proxy function above
-        if (isApi && !isAuthRoute) return true;
+  return NextResponse.next();
+}
 
-        if (pathname.startsWith('/admin')) {
-          return !!token;
-        }
-
-        return true;
-      },
-    },
-    pages: {
-      signIn: '/login',
-    },
-  },
-);
+export default proxy;
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/api/((?!auth).*)'],
 };

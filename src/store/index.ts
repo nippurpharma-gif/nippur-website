@@ -4,6 +4,7 @@ import { translations } from '@/lib/i18n/translations';
 
 
 import type { ProductionStat } from '@/lib/production-stats';
+import type { HomepageSectionConfig } from '@/lib/homepage-sections';
 
 export interface SiteSettings {
   id: number;
@@ -18,6 +19,7 @@ export interface SiteSettings {
   descriptionEn: string;
   descriptionAr: string;
   productionStats: ProductionStat[];
+  homepageSections: HomepageSectionConfig[];
 }
 
 interface AppState {

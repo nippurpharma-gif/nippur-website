@@ -7,12 +7,25 @@ import { useGSAP } from '@gsap/react';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
+  ScrollTrigger.config({ ignoreMobileResize: true });
+  gsap.defaults({ ease: 'power2.out', duration: 0.9 });
+  gsap.config({ nullTargetWarn: false });
 }
 
 export { gsap, ScrollTrigger, SplitText, useGSAP };
 
-export const EASE = 'power3.out';
+export const EASE = 'power2.out';
 export const EASE_SOFT = 'power2.out';
+export const EASE_EXPO = 'expo.out';
+
+/** One shared scroll start — avoids competing triggers firing at different thresholds */
+export const SCROLL = {
+  early: 'top 88%',
+  default: 'top 82%',
+  late: 'top 75%',
+} as const;
+
+const REVEAL_Y = 28;
 
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined') return false;
@@ -23,60 +36,106 @@ function isArabicText(text: string): boolean {
   return /[\u0600-\u06FF]/.test(text);
 }
 
-function shouldAvoidSplitText(el: HTMLElement): boolean {
-  if (typeof document !== 'undefined' && document.documentElement.dir === 'rtl') {
-    return true;
-  }
-  return isArabicText(el.textContent ?? '');
+function clearReveal(els: gsap.TweenTarget) {
+  gsap.set(els, { clearProps: 'opacity,visibility,transform' });
 }
 
-/** Hero entrance — brand → label → title → subtitle → CTAs (stats live in StatsSection) */
-export function createHeroGsapTimeline(root: HTMLElement): gsap.core.Timeline | null {
-  const nodes = root.querySelectorAll<HTMLElement>('[data-hero]');
+/**
+ * Best-practice scroll reveal: set hidden state first, then animate TO visible.
+ * Avoids the classic `from()` flicker (visible → jump to hidden → animate).
+ */
+export function revealOnScroll(
+  targets: gsap.TweenTarget,
+  options?: {
+    trigger?: Element | string | null;
+    start?: string;
+    y?: number;
+    duration?: number;
+    stagger?: number | gsap.StaggerVars;
+    delay?: number;
+  },
+) {
+  const els = gsap.utils.toArray<HTMLElement>(targets);
+  if (!els.length) return null;
+
   if (prefersReducedMotion()) {
-    gsap.set(nodes, { autoAlpha: 1, y: 0, clearProps: 'transform' });
+    clearReveal(els);
     return null;
   }
 
+  const y = options?.y ?? REVEAL_Y;
+  gsap.set(els, { opacity: 0, y, force3D: true });
+
+  return gsap.to(els, {
+    opacity: 1,
+    y: 0,
+    duration: options?.duration ?? 0.9,
+    stagger: options?.stagger ?? 0,
+    delay: options?.delay ?? 0,
+    ease: EASE,
+    overwrite: 'auto',
+    scrollTrigger: {
+      trigger: (options?.trigger ?? els[0]) as Element,
+      start: options?.start ?? SCROLL.default,
+      once: true,
+      fastScrollEnd: true,
+    },
+  });
+}
+
+/** Hero entrance — set → cascade (no from-flicker) */
+export function createHeroGsapTimeline(root: HTMLElement): gsap.core.Timeline | null {
   const brand = root.querySelector<HTMLElement>('[data-hero="brand"]');
   const label = root.querySelector<HTMLElement>('[data-hero="label"]');
   const title = root.querySelector<HTMLElement>('[data-hero="title"]');
   const subtitle = root.querySelector<HTMLElement>('[data-hero="subtitle"]');
   const cta = root.querySelector<HTMLElement>('[data-hero="cta"]');
   const bg = root.querySelector<HTMLElement>('[data-hero="bg"]');
+  const nodes = [brand, label, title, subtitle, cta].filter(Boolean) as HTMLElement[];
 
-  const tl = gsap.timeline({ defaults: { ease: EASE } });
+  if (prefersReducedMotion()) {
+    clearReveal(nodes);
+    return null;
+  }
+
+  gsap.set(nodes, { opacity: 0, y: 20, force3D: true });
+
+  const tl = gsap.timeline({ defaults: { ease: EASE, overwrite: 'auto' } });
 
   if (bg) {
     gsap.fromTo(
       bg,
-      { scale: 1.08 },
-      { scale: 1, duration: 1.65, ease: 'power2.out' },
+      { scale: 1.06 },
+      { scale: 1, duration: 1.8, ease: 'power1.out' },
     );
   }
 
-  if (brand) {
-    tl.from(brand, { y: 12, autoAlpha: 0, duration: 0.4 }, 0.08);
-  }
-
-  if (label) {
-    tl.from(label, { y: 12, autoAlpha: 0, duration: 0.4 }, '-=0.18');
-  }
-
-  if (title) {
-    // Brand wordmark stays one fitted line — no SplitText (preserves width fit EN/AR)
-    tl.from(title, { y: 22, autoAlpha: 0, duration: 0.75 }, '-=0.1');
-  }
-
-  if (subtitle) {
-    tl.from(subtitle, { y: 16, autoAlpha: 0, duration: 0.55 }, '-=0.38');
-  }
-
-  if (cta) {
-    tl.from(cta, { y: 14, autoAlpha: 0, duration: 0.5 }, '-=0.32');
-  }
+  if (brand) tl.to(brand, { opacity: 1, y: 0, duration: 0.55 }, 0.12);
+  if (label) tl.to(label, { opacity: 1, y: 0, duration: 0.55 }, '-=0.35');
+  if (title) tl.to(title, { opacity: 1, y: 0, duration: 0.85 }, '-=0.28');
+  if (subtitle) tl.to(subtitle, { opacity: 1, y: 0, duration: 0.65 }, '-=0.5');
+  if (cta) tl.to(cta, { opacity: 1, y: 0, duration: 0.55 }, '-=0.4');
 
   return tl;
+}
+
+/** Soft scrub only — keep motion subtle so sticky hero does not jitter */
+export function createHeroScrollParallax(root: HTMLElement) {
+  if (prefersReducedMotion()) return null;
+
+  const bg = root.querySelector<HTMLElement>('[data-hero="bg"]');
+  if (!bg) return null;
+
+  return gsap.to(bg, {
+    yPercent: 12,
+    ease: 'none',
+    scrollTrigger: {
+      trigger: root,
+      start: 'top top',
+      end: 'bottom top',
+      scrub: 1.2,
+    },
+  });
 }
 
 export function gsapCountUp(
@@ -101,14 +160,14 @@ export function gsapCountUp(
   const proxy = { val: 0 };
   const st =
     options?.scrollTrigger === true
-      ? { trigger: el, start: 'top 88%', toggleActions: 'play none none none' as const }
+      ? { trigger: el, start: SCROLL.early, once: true }
       : options?.scrollTrigger === false || options?.scrollTrigger === undefined
         ? undefined
         : options.scrollTrigger;
 
   return gsap.to(proxy, {
     val: target,
-    duration: options?.duration ?? 1.4,
+    duration: options?.duration ?? 1.35,
     ease: EASE_SOFT,
     snap: { val: 1 },
     onUpdate: () => write(proxy.val),
@@ -116,7 +175,7 @@ export function gsapCountUp(
   });
 }
 
-/** Section header — stacked label + title + subtitle (no SplitText, always visible) */
+/** Section header — one timeline, set → to */
 export function revealSectionHeader(
   scope: HTMLElement,
   options?: { start?: string },
@@ -130,42 +189,36 @@ export function revealSectionHeader(
   if (!label && !title && !subtitle) return;
 
   const nodes = [label, title, subtitle].filter(Boolean) as HTMLElement[];
-  gsap.set(nodes, { autoAlpha: 1, clearProps: 'opacity,visibility' });
 
   if (prefersReducedMotion()) {
-    gsap.set(nodes, { y: 0, yPercent: 0 });
+    clearReveal(nodes);
     return;
   }
 
+  gsap.set(nodes, { opacity: 0, y: 22, force3D: true });
+
   const tl = gsap.timeline({
+    defaults: { ease: EASE, overwrite: 'auto' },
     scrollTrigger: {
       trigger: scope,
-      start: options?.start ?? 'top 80%',
-      toggleActions: 'play none none none',
+      start: options?.start ?? SCROLL.early,
+      once: true,
+      fastScrollEnd: true,
     },
-    defaults: { ease: EASE },
   });
 
-  if (label) {
-    tl.from(label, { y: 12, duration: 0.45 }, 0);
-  }
-
-  if (title) {
-    tl.from(title, { y: 18, duration: 0.65 }, '-=0.12');
-  }
-
-  if (subtitle) {
-    tl.from(subtitle, { y: 14, duration: 0.55 }, '-=0.35');
-  }
+  if (label) tl.to(label, { opacity: 1, y: 0, duration: 0.55 }, 0);
+  if (title) tl.to(title, { opacity: 1, y: 0, duration: 0.8 }, 0.08);
+  if (subtitle) tl.to(subtitle, { opacity: 1, y: 0, duration: 0.7 }, 0.18);
 }
 
-/** Soft word/line reveal — skips SplitText for Arabic (shaping-safe fade). */
+/** Soft word/line reveal — skips SplitText for Arabic */
 export function animateSplitHeading(
   el: HTMLElement,
   options?: { start?: string; delay?: number; immediate?: boolean },
 ) {
   if (prefersReducedMotion()) {
-    gsap.set(el, { autoAlpha: 1 });
+    clearReveal(el);
     return null;
   }
 
@@ -174,21 +227,20 @@ export function animateSplitHeading(
     isArabicText(el.textContent ?? '');
 
   if (isRtl) {
-    return gsap.from(el, {
+    if (options?.immediate) {
+      gsap.set(el, { opacity: 0, y: 22, force3D: true });
+      return gsap.to(el, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        delay: options?.delay ?? 0,
+        ease: EASE,
+      });
+    }
+    return revealOnScroll(el, {
+      start: options?.start,
+      delay: options?.delay,
       y: 22,
-      autoAlpha: 0,
-      duration: 0.75,
-      ease: EASE,
-      delay: options?.delay ?? 0,
-      ...(options?.immediate
-        ? {}
-        : {
-            scrollTrigger: {
-              trigger: el,
-              start: options?.start ?? 'top 85%',
-              toggleActions: 'play none none none',
-            },
-          }),
     });
   }
 
@@ -198,22 +250,20 @@ export function animateSplitHeading(
       mask: 'lines',
       autoSplit: true,
       onSplit(self) {
-        return gsap.from(self.words, {
-          yPercent: 110,
-          autoAlpha: 0,
-          duration: 0.8,
-          stagger: 0.035,
+        gsap.set(self.words, { yPercent: 100, opacity: 0 });
+        return gsap.to(self.words, {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.75,
+          stagger: 0.028,
           ease: EASE,
           delay: options?.delay ?? 0,
-          ...(options?.immediate
-            ? {}
-            : {
-                scrollTrigger: {
-                  trigger: el,
-                  start: options?.start ?? 'top 85%',
-                  toggleActions: 'play none none none',
-                },
-              }),
+          scrollTrigger: {
+            trigger: el,
+            start: options?.start ?? SCROLL.default,
+            once: true,
+            fastScrollEnd: true,
+          },
         });
       },
     });
@@ -225,26 +275,45 @@ export function animateSplitHeading(
 export function scrollFadeUp(
   targets: gsap.TweenTarget,
   trigger: Element | null,
-  options?: { stagger?: number; y?: number; start?: string },
+  options?: { stagger?: number; y?: number; start?: string; duration?: number },
 ) {
-  if (prefersReducedMotion()) {
-    gsap.set(targets, { autoAlpha: 1, y: 0 });
-    return;
-  }
-
-  gsap.from(targets, {
-    y: options?.y ?? 28,
-    autoAlpha: 0,
-    duration: 0.7,
+  return revealOnScroll(targets, {
+    trigger,
     stagger: options?.stagger ?? 0.07,
-    ease: EASE,
-    scrollTrigger: {
-      trigger: trigger ?? undefined,
-      start: options?.start ?? 'top 85%',
-      toggleActions: 'play none none none',
-    },
+    y: options?.y,
+    start: options?.start,
+    duration: options?.duration,
   });
 }
 
-/** Alias for counter animations */
+/** Gentle scrub parallax — transform only, no clip-path (avoids flicker) */
+export function parallaxMedia(
+  media: HTMLElement,
+  trigger: HTMLElement,
+  options?: { yPercent?: number; scrub?: number | boolean },
+) {
+  if (prefersReducedMotion()) return null;
+
+  return gsap.fromTo(
+    media,
+    { yPercent: -(options?.yPercent ?? 6) },
+    {
+      yPercent: options?.yPercent ?? 6,
+      ease: 'none',
+      force3D: true,
+      scrollTrigger: {
+        trigger,
+        start: 'top bottom',
+        end: 'bottom top',
+        scrub: options?.scrub ?? 1.1,
+      },
+    },
+  );
+}
+
+/** @deprecated clip-path reveals cause flicker — kept as no-op for call-site safety */
+export function revealMediaClip(_frame: HTMLElement, _options?: { start?: string; duration?: number }) {
+  return null;
+}
+
 export const animateCounter = gsapCountUp;

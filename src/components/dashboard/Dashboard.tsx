@@ -23,6 +23,7 @@ import {
   Upload,
   Package,
   Shield,
+  PanelsTopLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +62,7 @@ import { useAppStore } from '@/store';
 import { ProductsTab } from '@/components/dashboard/ProductsTab';
 import { UsersTab } from '@/components/dashboard/UsersTab';
 import { ProductionStatsEditor } from '@/components/dashboard/ProductionStatsEditor';
+import { HomepageSectionsEditor } from '@/components/dashboard/HomepageSectionsEditor';
 import {
   DEFAULT_PRODUCTION_STATS,
   parseProductionStats,
@@ -77,6 +79,7 @@ function asList<T>(data: unknown): T[] {
 
 interface NewsArticle {
   id: number;
+  slug: string;
   titleEn: string;
   titleAr: string;
   excerptEn: string;
@@ -105,6 +108,7 @@ interface Application {
 }
 
 interface NewsFormData {
+  slug: string;
   titleEn: string;
   titleAr: string;
   excerptEn: string;
@@ -139,14 +143,22 @@ interface PartnerFormData {
 
 interface JobPosition {
   id: number;
+  slug: string;
   titleEn: string;
   titleAr: string;
   departmentEn: string;
   departmentAr: string;
   location: string;
   type: string;
+  experienceLevel: string;
   descriptionEn: string;
   descriptionAr: string;
+  responsibilitiesEn: string;
+  responsibilitiesAr: string;
+  requirementsEn: string;
+  requirementsAr: string;
+  offerEn: string;
+  offerAr: string;
   applicationEmail: string;
   sortOrder: number;
   isActive: boolean;
@@ -154,14 +166,22 @@ interface JobPosition {
 }
 
 interface JobFormData {
+  slug: string;
   titleEn: string;
   titleAr: string;
   departmentEn: string;
   departmentAr: string;
   location: string;
   type: string;
+  experienceLevel: string;
   descriptionEn: string;
   descriptionAr: string;
+  responsibilitiesEn: string;
+  responsibilitiesAr: string;
+  requirementsEn: string;
+  requirementsAr: string;
+  offerEn: string;
+  offerAr: string;
   applicationEmail: string;
   sortOrder: number;
   isActive: boolean;
@@ -184,6 +204,7 @@ interface SiteSettingsData {
 }
 
 const emptyNewsForm: NewsFormData = {
+  slug: '',
   titleEn: '',
   titleAr: '',
   excerptEn: '',
@@ -210,14 +231,22 @@ const emptyPartnerForm: PartnerFormData = {
 };
 
 const emptyJobForm: JobFormData = {
+  slug: '',
   titleEn: '',
   titleAr: '',
   departmentEn: '',
   departmentAr: '',
   location: 'Baghdad',
   type: 'Full-time',
+  experienceLevel: '',
   descriptionEn: '',
   descriptionAr: '',
+  responsibilitiesEn: '',
+  responsibilitiesAr: '',
+  requirementsEn: '',
+  requirementsAr: '',
+  offerEn: '',
+  offerAr: '',
   applicationEmail: '',
   sortOrder: 0,
   isActive: true,
@@ -252,6 +281,7 @@ function formatDate(dateStr: string) {
 
 const NAV_ITEMS = [
   { id: 'overview', icon: LayoutDashboard, labelEn: 'Overview', labelAr: 'نظرة عامة' },
+  { id: 'sections', icon: PanelsTopLeft, labelEn: 'Page Sections', labelAr: 'أقسام الصفحة' },
   { id: 'products', icon: Package, labelEn: 'Products', labelAr: 'المنتجات' },
   { id: 'news', icon: Newspaper, labelEn: 'News Management', labelAr: 'إدارة الأخبار' },
   { id: 'applications', icon: Users, labelEn: 'Applications', labelAr: 'الطلبات' },
@@ -365,6 +395,7 @@ export function Dashboard() {
           <div className="flex-1 flex items-center justify-between">
             <h1 className="text-lg font-semibold text-gray-900">
               {activeTab === 'overview' && t('Overview', 'نظرة عامة')}
+              {activeTab === 'sections' && t('Page Sections', 'أقسام الصفحة')}
               {activeTab === 'products' && t('Products', 'المنتجات')}
               {activeTab === 'news' && t('News Management', 'إدارة الأخبار')}
               {activeTab === 'applications' && t('Applications', 'الطلبات')}
@@ -384,6 +415,7 @@ export function Dashboard() {
         {/* Tab content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           {activeTab === 'overview' && <OverviewTab />}
+          {activeTab === 'sections' && <HomepageSectionsEditor />}
           {activeTab === 'products' && <ProductsTab />}
           {activeTab === 'news' && <NewsTab />}
           {activeTab === 'applications' && <ApplicationsTab />}
@@ -601,6 +633,7 @@ function NewsTab() {
   function openEditDialog(article: NewsArticle) {
     setEditingNews(article);
     setFormData({
+      slug: article.slug || '',
       titleEn: article.titleEn,
       titleAr: article.titleAr,
       excerptEn: article.excerptEn,
@@ -664,6 +697,7 @@ function NewsTab() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Title', 'العنوان')}</TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Slug', 'الرابط')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Category', 'الفئة')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Date', 'التاريخ')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Status', 'الحالة')}</TableHead>
@@ -677,6 +711,20 @@ function NewsTab() {
                     <TableRow key={article.id} className="group">
                       <TableCell className="font-medium text-gray-900 text-sm max-w-[250px] truncate">
                         {isAr ? article.titleAr : article.titleEn}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-500 max-w-[140px] truncate">
+                        {article.slug ? (
+                          <a
+                            href={`/news/${article.slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-brand-600 hover:underline"
+                          >
+                            {article.slug}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="text-xs">
@@ -760,6 +808,30 @@ function NewsTab() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-gray-500">
+                {t('URL slug (optional)', 'رابط الخبر (اختياري)')}
+              </Label>
+              <Input
+                value={formData.slug}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    slug: e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]+/g, '-')
+                      .replace(/-+/g, '-'),
+                  })
+                }
+                placeholder="gmp-certification"
+              />
+              <p className="text-[11px] text-gray-400">
+                {formData.slug
+                  ? `/news/${formData.slug}`
+                  : t('Auto-generated from English title if empty', 'يُولَّد تلقائياً من العنوان الإنجليزي إن تُرك فارغاً')}
+              </p>
             </div>
 
             {/* Excerpt row */}
@@ -1442,14 +1514,22 @@ function JobsTab() {
   function openEditDialog(job: JobPosition) {
     setEditingJob(job);
     setFormData({
+      slug: job.slug || '',
       titleEn: job.titleEn,
       titleAr: job.titleAr,
       departmentEn: job.departmentEn,
       departmentAr: job.departmentAr,
       location: job.location,
       type: job.type,
+      experienceLevel: job.experienceLevel || '',
       descriptionEn: job.descriptionEn,
       descriptionAr: job.descriptionAr,
+      responsibilitiesEn: job.responsibilitiesEn || '',
+      responsibilitiesAr: job.responsibilitiesAr || '',
+      requirementsEn: job.requirementsEn || '',
+      requirementsAr: job.requirementsAr || '',
+      offerEn: job.offerEn || '',
+      offerAr: job.offerAr || '',
       applicationEmail: job.applicationEmail,
       sortOrder: job.sortOrder,
       isActive: job.isActive,
@@ -1509,6 +1589,7 @@ function JobsTab() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Title (EN)', 'العنوان (إنجليزي)')}</TableHead>
+                    <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Slug', 'الرابط')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Title (AR)', 'العنوان (عربي)')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Department', 'القسم')}</TableHead>
                     <TableHead className="text-xs font-semibold text-gray-500 uppercase">{t('Location', 'الموقع')}</TableHead>
@@ -1522,6 +1603,15 @@ function JobsTab() {
                   {jobs.map((job) => (
                     <TableRow key={job.id} className="group">
                       <TableCell className="font-medium text-gray-900 text-sm">{job.titleEn}</TableCell>
+                      <TableCell className="text-xs text-gray-500 max-w-[120px] truncate">
+                        {job.slug ? (
+                          <a href={`/careers/${job.slug}`} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+                            {job.slug}
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </TableCell>
                       <TableCell className="text-sm text-gray-600" dir="rtl">{job.titleAr}</TableCell>
                       <TableCell className="text-sm text-gray-600">{isAr ? job.departmentAr : job.departmentEn}</TableCell>
                       <TableCell className="text-sm text-gray-500">{job.location}</TableCell>
@@ -1584,6 +1674,30 @@ function JobsTab() {
               </div>
             </div>
 
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-gray-500">
+                {t('URL slug (optional)', 'رابط الوظيفة (اختياري)')}
+              </Label>
+              <Input
+                value={formData.slug}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    slug: e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]+/g, '-')
+                      .replace(/-+/g, '-'),
+                  })
+                }
+                placeholder="production-supervisor"
+              />
+              <p className="text-[11px] text-gray-400">
+                {formData.slug
+                  ? `/careers/${formData.slug}`
+                  : t('Auto-generated from English title if empty', 'يُولَّد تلقائياً من العنوان الإنجليزي إن تُرك فارغاً')}
+              </p>
+            </div>
+
             {/* Department row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -1597,7 +1711,7 @@ function JobsTab() {
             </div>
 
             {/* Meta fields */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">{t('Location', 'الموقع')}</Label>
                 <Input value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="Baghdad" />
@@ -1614,6 +1728,16 @@ function JobsTab() {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Experience (optional)', 'الخبرة (اختياري)')}
+                </Label>
+                <Input
+                  value={formData.experienceLevel}
+                  onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                  placeholder={t('e.g. 3–5 years', 'مثال: 3–5 سنوات')}
+                />
+              </div>
+              <div className="space-y-1.5">
                 <Label className="text-xs font-medium text-gray-500">{t('Sort Order', 'ترتيب')}</Label>
                 <Input type="number" value={formData.sortOrder} onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })} />
               </div>
@@ -1626,15 +1750,120 @@ function JobsTab() {
               <p className="text-xs text-gray-400">{t('Email address where applications for this position will be sent', 'عنوان البريد الإلكتروني الذي سيتم إرسال طلبات هذا المنصب إليه')}</p>
             </div>
 
-            {/* Description row */}
+            <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2">
+              <p className="text-xs text-gray-500">
+                {t(
+                  'Optional detail fields: use one item per line for lists. Leave blank to hide a section on the job page.',
+                  'الحقول التالية اختيارية: ضع كل نقطة في سطر مستقل. اترك الحقل فارغاً لإخفاء القسم من صفحة الوظيفة.',
+                )}
+              </p>
+            </div>
+
+            {/* Overview */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">{t('Description (English)', 'الوصف (إنجليزي)')}</Label>
-                <Textarea value={formData.descriptionEn} onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })} placeholder="Job description in English" rows={4} />
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Overview (English)', 'نبذة (إنجليزي)')}
+                </Label>
+                <Textarea
+                  value={formData.descriptionEn}
+                  onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                  placeholder="Short role overview shown on cards and the job page"
+                  rows={3}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-medium text-gray-500">{t('Description (Arabic)', 'الوصف (عربي)')}</Label>
-                <Textarea value={formData.descriptionAr} onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })} placeholder="وصف الوظيفة بالعربية" rows={4} dir="rtl" />
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Overview (Arabic)', 'نبذة (عربي)')}
+                </Label>
+                <Textarea
+                  value={formData.descriptionAr}
+                  onChange={(e) => setFormData({ ...formData, descriptionAr: e.target.value })}
+                  placeholder="نبذة قصيرة تظهر في البطاقات وصفحة الوظيفة"
+                  rows={3}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Responsibilities */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Responsibilities (English, optional)', 'المسؤوليات (إنجليزي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.responsibilitiesEn}
+                  onChange={(e) => setFormData({ ...formData, responsibilitiesEn: e.target.value })}
+                  placeholder={"Oversee daily production\nEnsure GMP compliance\nTrain junior staff"}
+                  rows={5}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Responsibilities (Arabic, optional)', 'المسؤوليات (عربي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.responsibilitiesAr}
+                  onChange={(e) => setFormData({ ...formData, responsibilitiesAr: e.target.value })}
+                  placeholder={"الإشراف على الإنتاج اليومي\nضمان الالتزام بممارسات التصنيع الجيد\nتدريب الكوادر"}
+                  rows={5}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Requirements */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Requirements (English, optional)', 'المتطلبات (إنجليزي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.requirementsEn}
+                  onChange={(e) => setFormData({ ...formData, requirementsEn: e.target.value })}
+                  placeholder={"Bachelor’s in Pharmacy or related field\n3+ years in pharmaceutical manufacturing"}
+                  rows={5}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('Requirements (Arabic, optional)', 'المتطلبات (عربي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.requirementsAr}
+                  onChange={(e) => setFormData({ ...formData, requirementsAr: e.target.value })}
+                  placeholder={"بكالوريوس صيدلة أو تخصص ذي صلة\nخبرة 3 سنوات فأكثر في التصنيع الدوائي"}
+                  rows={5}
+                  dir="rtl"
+                />
+              </div>
+            </div>
+
+            {/* Offer */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('What we offer (English, optional)', 'ما نقدّمه (إنجليزي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.offerEn}
+                  onChange={(e) => setFormData({ ...formData, offerEn: e.target.value })}
+                  placeholder={"Competitive salary\nHealth insurance\nProfessional development"}
+                  rows={4}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-500">
+                  {t('What we offer (Arabic, optional)', 'ما نقدّمه (عربي، اختياري)')}
+                </Label>
+                <Textarea
+                  value={formData.offerAr}
+                  onChange={(e) => setFormData({ ...formData, offerAr: e.target.value })}
+                  placeholder={"راتب تنافسي\nتأمين صحي\nتطوير مهني"}
+                  rows={4}
+                  dir="rtl"
+                />
               </div>
             </div>
 

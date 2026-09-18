@@ -6,7 +6,7 @@ import { useAppStore } from '@/store';
 import { SectionWrapper, FadeIn, StaggerContainer, StaggerItem } from './SectionWrapper';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { useProductionStats } from '@/hooks/use-production-stats';
-import { gsap, useGSAP, prefersReducedMotion, EASE } from '@/lib/gsap-site';
+import { gsap, useGSAP, prefersReducedMotion, parallaxMedia, revealOnScroll, SCROLL } from '@/lib/gsap-site';
 
 const iconMap: Record<string, React.ElementType> = {
   pill: Pill,
@@ -25,23 +25,10 @@ export function ManufacturingSection() {
     () => {
       if (prefersReducedMotion()) return;
 
-      const img = imageWrapRef.current?.querySelector('img');
-      if (img && imageWrapRef.current) {
-        gsap.fromTo(
-          img,
-          { yPercent: -8, scale: 1.08 },
-          {
-            yPercent: 8,
-            scale: 1,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: imageWrapRef.current,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-            },
-          },
-        );
+      const frame = imageWrapRef.current;
+      const img = frame?.querySelector('img');
+      if (frame && img) {
+        parallaxMedia(img, frame, { yPercent: 6, scrub: 1.15 });
       }
 
       if (capacityRef.current) {
@@ -49,21 +36,15 @@ export function ManufacturingSection() {
           '[data-capacity-cell]',
           capacityRef.current,
         );
-        gsap.from(cells, {
-          y: 18,
-          autoAlpha: 0,
-          duration: 0.55,
+        revealOnScroll(cells, {
+          trigger: capacityRef.current,
+          start: SCROLL.default,
           stagger: 0.07,
-          ease: EASE,
-          scrollTrigger: {
-            trigger: capacityRef.current,
-            start: 'top 88%',
-            toggleActions: 'play none none none',
-          },
+          y: 24,
         });
       }
     },
-    { dependencies: [capacityItems.length] },
+    { dependencies: [capacityItems.length], revertOnUpdate: true },
   );
 
   return (

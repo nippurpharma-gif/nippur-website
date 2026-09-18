@@ -41,6 +41,9 @@ async function redisLimit(key: string, opts: { limit: number; windowMs: number }
     ['PEXPIRE', key, String(opts.windowMs)],
   ];
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 1500);
+
   try {
     const res = await fetch(`${base}/pipeline`, {
       method: 'POST',
@@ -50,6 +53,7 @@ async function redisLimit(key: string, opts: { limit: number; windowMs: number }
       },
       body: JSON.stringify(pipeline),
       cache: 'no-store',
+      signal: controller.signal,
     });
     if (!res.ok) return null;
     const json = (await res.json()) as Array<{ result?: number }>;
@@ -58,12 +62,15 @@ async function redisLimit(key: string, opts: { limit: number; windowMs: number }
       await fetch(`${base}/zrem/${encodeURIComponent(key)}/${encodeURIComponent(member)}`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: 'no-store',
+        signal: AbortSignal.timeout(1000),
       }).catch(() => undefined);
       return { ok: false, retryAfterSec: Math.max(1, Math.ceil(opts.windowMs / 1000)) };
     }
     return { ok: true };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

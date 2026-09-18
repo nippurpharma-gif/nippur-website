@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { db } from '@/lib/db';
 import type { SiteSettings } from '@/store';
 import { parseProductionStats } from '@/lib/production-stats';
+import { parseHomepageSections } from '@/lib/homepage-sections';
 
 export type HomeProduct = {
   id: number;
@@ -23,14 +24,22 @@ export type HomeProduct = {
 
 export type HomeJob = {
   id: number;
+  slug: string;
   titleEn: string;
   titleAr: string;
   departmentEn: string;
   departmentAr: string;
   location: string;
   type: string;
+  experienceLevel: string;
   descriptionEn: string;
   descriptionAr: string;
+  responsibilitiesEn: string;
+  responsibilitiesAr: string;
+  requirementsEn: string;
+  requirementsAr: string;
+  offerEn: string;
+  offerAr: string;
   applicationEmail: string;
   sortOrder: number;
   isActive: boolean;
@@ -38,6 +47,7 @@ export type HomeJob = {
 
 export type HomeNews = {
   id: number;
+  slug: string;
   titleEn: string;
   titleAr: string;
   excerptEn: string;
@@ -82,6 +92,7 @@ function toSettings(row: {
   descriptionEn: string;
   descriptionAr: string;
   productionStats: unknown;
+  homepageSections?: unknown;
 }): SiteSettings {
   return {
     id: row.id,
@@ -96,6 +107,7 @@ function toSettings(row: {
     descriptionEn: row.descriptionEn,
     descriptionAr: row.descriptionAr,
     productionStats: parseProductionStats(row.productionStats),
+    homepageSections: parseHomepageSections(row.homepageSections),
   };
 }
 
@@ -128,9 +140,10 @@ export const getHomePageData = cache(async (): Promise<HomePageData> => {
     return {
       settings: settingsRow ? toSettings(settingsRow) : null,
       products,
-      jobs,
+      jobs: jobs.map((j) => ({ ...j, slug: j.slug })),
       news: news.map((a) => ({
         ...a,
+        slug: a.slug,
         createdAt: a.createdAt.toISOString(),
       })),
       partners,

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
-import { gsap, useGSAP, prefersReducedMotion, EASE } from '@/lib/gsap-site';
+import { gsap, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL } from '@/lib/gsap-site';
 import { scrollToSection } from '@/lib/scroll-to-section';
 
 export function CTASection() {
@@ -19,42 +19,35 @@ export function CTASection() {
       const parts = gsap.utils.toArray<HTMLElement>('[data-cta-part]', root);
 
       if (prefersReducedMotion()) {
-        gsap.set(parts, { autoAlpha: 1, y: 0 });
+        gsap.set(parts, { clearProps: 'opacity,visibility,transform' });
         return;
       }
 
       if (bg) {
         gsap.fromTo(
           bg,
-          { scale: 1.08 },
+          { yPercent: -6 },
           {
-            scale: 1,
+            yPercent: 6,
             ease: 'none',
+            force3D: true,
             scrollTrigger: {
               trigger: root,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.8,
+              scrub: 1.2,
             },
           },
         );
       }
 
-      gsap
-        .timeline({
-          scrollTrigger: {
-            trigger: root,
-            start: 'top 72%',
-            toggleActions: 'play none none none',
-          },
-        })
-        .from(parts, {
-          y: 28,
-          autoAlpha: 0,
-          duration: 0.75,
-          stagger: 0.12,
-          ease: EASE,
-        });
+      revealOnScroll(parts, {
+        trigger: root,
+        start: SCROLL.late,
+        stagger: 0.1,
+        y: 30,
+        duration: 0.95,
+      });
     },
     { scope: rootRef, dependencies: [locale], revertOnUpdate: true },
   );

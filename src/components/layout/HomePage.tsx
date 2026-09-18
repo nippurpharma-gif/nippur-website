@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useActiveSection } from '@/components/sections/SectionWrapper';
@@ -20,6 +20,11 @@ import { CTASection } from '@/components/sections/CTASection';
 import { ScrollTrigger } from '@/lib/gsap-site';
 import { useAppStore } from '@/store';
 import type { HomePageData } from '@/lib/home-data';
+import {
+  DEFAULT_HOMEPAGE_SECTIONS,
+  parseHomepageSections,
+  type ManagedSectionKey,
+} from '@/lib/homepage-sections';
 
 export function HomePage({ data }: { data: HomePageData }) {
   useActiveSection();
@@ -38,6 +43,22 @@ export function HomePage({ data }: { data: HomePageData }) {
     void document.fonts.ready.then(() => ScrollTrigger.refresh());
   }, [locale]);
 
+  const managedOrder = useMemo(() => {
+    const sections = parseHomepageSections(data.settings?.homepageSections ?? DEFAULT_HOMEPAGE_SECTIONS);
+    return sections.filter((s) => s.visible).map((s) => s.key);
+  }, [data.settings?.homepageSections]);
+
+  const sectionMap: Record<ManagedSectionKey, ReactNode> = {
+    manufacturing: <ManufacturingSection key="manufacturing" />,
+    products: <ProductsSection key="products" initialProducts={data.products} />,
+    research: <ResearchSection key="research" />,
+    quality: <QualitySection key="quality" />,
+    sustainability: <SustainabilitySection key="sustainability" />,
+    careers: <CareersSection key="careers" initialJobs={data.jobs} />,
+    news: <NewsSection key="news" initialArticles={data.news} />,
+    partners: <PartnersSection key="partners" initialPartners={data.partners} />,
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -46,14 +67,7 @@ export function HomePage({ data }: { data: HomePageData }) {
         <div className="relative z-10 bg-background">
           <StatsSection />
           <AboutSection />
-          <ManufacturingSection />
-          <ProductsSection initialProducts={data.products} />
-          <ResearchSection />
-          <QualitySection />
-          <SustainabilitySection />
-          <CareersSection initialJobs={data.jobs} />
-          <NewsSection initialArticles={data.news} />
-          <PartnersSection initialPartners={data.partners} />
+          {managedOrder.map((key) => sectionMap[key])}
           <ContactSection />
           <CTASection />
         </div>

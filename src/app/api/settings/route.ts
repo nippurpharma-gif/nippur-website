@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth';
 import { z } from 'zod';
 import { mediaUrlSchema } from '@/lib/validation';
 import { parseProductionStats } from '@/lib/production-stats';
+import { MANAGED_SECTION_KEYS, parseHomepageSections } from '@/lib/homepage-sections';
 
 const productionStatSchema = z.object({
   value: z.string().trim().min(1).max(24),
@@ -12,6 +13,12 @@ const productionStatSchema = z.object({
   unitAr: z.string().trim().max(80),
   labelEn: z.string().trim().min(1).max(120),
   labelAr: z.string().trim().min(1).max(120),
+});
+
+const homepageSectionSchema = z.object({
+  key: z.enum(MANAGED_SECTION_KEYS),
+  visible: z.boolean(),
+  sortOrder: z.number().int().min(0).max(100),
 });
 
 const settingsSchema = z.object({
@@ -26,6 +33,7 @@ const settingsSchema = z.object({
   descriptionEn: z.string().max(2000).optional(),
   descriptionAr: z.string().max(2000).optional(),
   productionStats: z.array(productionStatSchema).max(8).optional(),
+  homepageSections: z.array(homepageSectionSchema).max(16).optional(),
 });
 
 function serializeSettings(row: {
@@ -41,11 +49,13 @@ function serializeSettings(row: {
   descriptionEn: string;
   descriptionAr: string;
   productionStats: unknown;
+  homepageSections: unknown;
   updatedAt: Date;
 }) {
   return {
     ...row,
     productionStats: parseProductionStats(row.productionStats),
+    homepageSections: parseHomepageSections(row.homepageSections),
   };
 }
 
@@ -76,21 +86,25 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid settings data' }, { status: 400 });
     }
 
-    const { productionStats, ...rest } = parsed.data;
+    const { productionStats, homepageSections, ...rest } = parsed.data;
     const settings = await db.siteSettings.upsert({
       where: { id: 1 },
       update: {
         ...rest,
         ...(productionStats ? { productionStats } : {}),
+        ...(homepageSections ? { homepageSections } : {}),
       },
       create: {
         id: 1,
         ...rest,
         ...(productionStats ? { productionStats } : {}),
+        ...(homepageSections ? { homepageSections } : {}),
       },
     });
 
     revalidatePath('/');
+    revalidatePath('/careers');
+    revalidatePath('/news');
     return NextResponse.json(serializeSettings(settings));
   } catch {
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });

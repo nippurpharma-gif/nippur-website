@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, Languages } from 'lucide-react';
 import { useAppStore } from '@/store';
@@ -9,33 +11,58 @@ import { cn } from '@/lib/utils';
 import { motionTransition } from '@/lib/motion-craft';
 import { persistLocale } from '@/lib/locale';
 import { scrollToSection as scrollTo } from '@/lib/scroll-to-section';
+import {
+  DEFAULT_HOMEPAGE_SECTIONS,
+  isSectionVisible,
+  type ManagedSectionKey,
+} from '@/lib/homepage-sections';
 
-/** Primary desktop nav — 4 minimal items without Contact */
-const primaryNav = [
-  { key: 'hero', labelKey: 'home' as const },
-  { key: 'about', labelKey: 'about' as const },
-  { key: 'manufacturing', labelKey: 'manufacturing' as const },
-  { key: 'products', labelKey: 'products' as const },
+type NavItem = {
+  key: string;
+  labelKey: 'home' | 'about' | 'manufacturing' | 'products' | 'research' | 'quality' | 'sustainability' | 'careers' | 'news' | 'contact';
+  managed?: ManagedSectionKey;
+};
+
+const primaryNavBase: NavItem[] = [
+  { key: 'hero', labelKey: 'home' },
+  { key: 'about', labelKey: 'about' },
+  { key: 'manufacturing', labelKey: 'manufacturing', managed: 'manufacturing' },
+  { key: 'products', labelKey: 'products', managed: 'products' },
 ];
 
-/** Full list for mobile drawer */
-const allNav = [
-  ...primaryNav,
-  { key: 'research', labelKey: 'research' as const },
-  { key: 'quality', labelKey: 'quality' as const },
-  { key: 'sustainability', labelKey: 'sustainability' as const },
-  { key: 'careers', labelKey: 'careers' as const },
-  { key: 'news', labelKey: 'news' as const },
-  { key: 'contact', labelKey: 'contact' as const },
+const allNavBase: NavItem[] = [
+  ...primaryNavBase,
+  { key: 'research', labelKey: 'research', managed: 'research' },
+  { key: 'quality', labelKey: 'quality', managed: 'quality' },
+  { key: 'sustainability', labelKey: 'sustainability', managed: 'sustainability' },
+  { key: 'careers', labelKey: 'careers', managed: 'careers' },
+  { key: 'news', labelKey: 'news', managed: 'news' },
+  { key: 'contact', labelKey: 'contact' },
 ];
 
 const DEFAULT_LOGO = '/images/logo-nippur.png';
 
-export function Header() {
+export function Header({ variant = 'home' }: { variant?: 'home' | 'inner' }) {
   const { locale, setLocale, t, activeSection, mobileMenuOpen, setMobileMenuOpen } =
     useAppStore();
   const { settings } = useSiteSettings();
-  const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(variant === 'inner');
+  const isHome = pathname === '/';
+  const solid = variant === 'inner' || scrolled;
+
+  const sections = settings?.homepageSections?.length
+    ? settings.homepageSections
+    : DEFAULT_HOMEPAGE_SECTIONS;
+
+  const filterNav = useCallback(
+    (items: NavItem[]) =>
+      items.filter((item) => !item.managed || isSectionVisible(sections, item.managed)),
+    [sections],
+  );
+
+  const primaryNav = useMemo(() => filterNav(primaryNavBase), [filterNav]);
+  const allNav = useMemo(() => filterNav(allNavBase), [filterNav]);
 
   const logoUrl = settings?.logoUrl || DEFAULT_LOGO;
   const companyName = settings
@@ -46,24 +73,40 @@ export function Header() {
       ? 'نيبور فارما'
       : 'NIPPUR Pharma';
 
-  const onHero = !scrolled;
+  const onHero = !solid;
   const ink = onHero ? 'text-white' : 'text-brand-800';
   const inkMuted = onHero ? 'text-white/75' : 'text-[var(--ink-tertiary)]';
   const inkHover = onHero ? 'hover:text-white' : 'hover:text-brand-600';
 
   useEffect(() => {
+    if (variant === 'inner') {
+      setScrolled(true);
+      return;
+    }
     const onScroll = () => setScrolled(window.scrollY > 24);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [variant]);
 
-  const scrollToSection = useCallback(
+  const goNav = useCallback(
     (key: string) => {
+      if (key === 'news') {
+        setMobileMenuOpen(false);
+        if (pathname?.startsWith('/news')) return;
+        window.location.assign('/news');
+        return;
+      }
+      if (key === 'careers') {
+        setMobileMenuOpen(false);
+        if (pathname?.startsWith('/careers')) return;
+        window.location.assign('/careers');
+        return;
+      }
       scrollTo(key);
       setMobileMenuOpen(false);
     },
-    [setMobileMenuOpen],
+    [pathname, setMobileMenuOpen],
   );
 
   const toggleLanguage = useCallback(() => {
@@ -71,6 +114,13 @@ export function Header() {
     setLocale(next);
     persistLocale(next);
   }, [locale, setLocale]);
+
+  const isNavActive = (key: string) => {
+    if (key === 'news') return pathname?.startsWith('/news');
+    if (key === 'careers') return pathname?.startsWith('/careers');
+    if (key === 'hero') return isHome && (!activeSection || activeSection === 'hero');
+    return isHome && activeSection === key;
+  };
 
   return (
     <>
@@ -80,20 +130,18 @@ export function Header() {
         transition={motionTransition.section}
         className={cn(
           'fixed inset-x-0 top-0 z-50 transition-[background-color,border-color,backdrop-filter,box-shadow] duration-300',
-          scrolled
+          solid
             ? 'glass border-b border-[rgba(10,37,68,0.08)] shadow-[var(--shadow-lift)]'
             : 'bg-transparent border-b border-transparent',
         )}
       >
         <div className="site-container">
-          {/* Header layout: Logo | Centered 4 Nav Items | Contact & Language Switcher */}
           <div className="relative flex h-16 lg:h-[4.25rem] items-center justify-between gap-4">
-            {/* Start — Logo Only */}
-            <button
-              type="button"
-              onClick={() => scrollToSection('hero')}
+            <Link
+              href="/"
               className="relative z-20 flex shrink-0 items-center rounded-sm focus-visible:ring-2 focus-visible:ring-brand-600"
               aria-label={companyName}
+              onClick={() => setMobileMenuOpen(false)}
             >
               <img
                 src={logoUrl}
@@ -103,20 +151,19 @@ export function Header() {
                   onHero && 'brightness-0 invert',
                 )}
               />
-            </button>
+            </Link>
 
-            {/* Center — Primary Minimal Nav (4 items) */}
             <nav
               aria-label={locale === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}
               className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-7 xl:flex"
             >
               {primaryNav.map((item) => {
-                const active = activeSection === item.key;
+                const active = isNavActive(item.key);
                 return (
                   <button
                     key={item.key}
                     type="button"
-                    onClick={() => scrollToSection(item.key)}
+                    onClick={() => goNav(item.key)}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'pointer-events-auto relative py-1.5 text-[13px] font-medium tracking-[-0.01em] transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-brand-600 rounded-sm',
@@ -140,12 +187,10 @@ export function Header() {
               })}
             </nav>
 
-            {/* End — Contact Button + Translation Switcher Button */}
             <div className="relative z-20 flex shrink-0 items-center gap-3 lg:gap-3.5">
-              {/* Contact Us Action Button */}
               <button
                 type="button"
-                onClick={() => scrollToSection('contact')}
+                onClick={() => goNav('contact')}
                 className={cn(
                   'hidden sm:inline-flex items-center text-[13px] font-medium transition-all duration-200 py-1.5 px-4 rounded-full border',
                   onHero
@@ -156,7 +201,6 @@ export function Header() {
                 {t.nav.contact}
               </button>
 
-              {/* Translation Button with Icon */}
               <button
                 type="button"
                 onClick={toggleLanguage}
@@ -172,11 +216,18 @@ export function Header() {
                 <span>{locale === 'en' ? 'العربية' : 'English'}</span>
               </button>
 
-              {/* Mobile Menu Toggle */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                aria-label={mobileMenuOpen ? (locale === 'ar' ? 'إغلاق القائمة' : 'Close menu') : (locale === 'ar' ? 'فتح القائمة' : 'Open menu')}
+                aria-label={
+                  mobileMenuOpen
+                    ? locale === 'ar'
+                      ? 'إغلاق القائمة'
+                      : 'Close menu'
+                    : locale === 'ar'
+                      ? 'فتح القائمة'
+                      : 'Open menu'
+                }
                 aria-expanded={mobileMenuOpen}
                 className={cn(
                   'flex size-10 items-center justify-center rounded-sm xl:hidden',
@@ -191,7 +242,6 @@ export function Header() {
         </div>
       </motion.header>
 
-      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <>
@@ -218,11 +268,7 @@ export function Header() {
               aria-label={locale === 'ar' ? 'القائمة' : 'Menu'}
             >
               <div className="flex items-center justify-between border-b border-[rgba(10,37,68,0.08)] px-5 py-4">
-                <img
-                  src={logoUrl}
-                  alt={companyName}
-                  className="h-7 w-auto object-contain"
-                />
+                <img src={logoUrl} alt={companyName} className="h-7 w-auto object-contain" />
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
@@ -239,10 +285,10 @@ export function Header() {
                     <li key={item.key}>
                       <button
                         type="button"
-                        onClick={() => scrollToSection(item.key)}
+                        onClick={() => goNav(item.key)}
                         className={cn(
                           'w-full rounded-md px-4 py-3 text-start text-sm font-medium transition-colors',
-                          activeSection === item.key
+                          isNavActive(item.key)
                             ? 'bg-brand-50 text-brand-700'
                             : 'text-[var(--ink-secondary)] hover:bg-brand-50/70 hover:text-brand-800',
                         )}

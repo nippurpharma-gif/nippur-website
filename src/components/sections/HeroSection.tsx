@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useActiveSection } from './SectionWrapper';
-import { createHeroGsapTimeline, useGSAP } from '@/lib/gsap-site';
+import { createHeroGsapTimeline, createHeroScrollParallax, useGSAP } from '@/lib/gsap-site';
 import { scrollToSection } from '@/lib/scroll-to-section';
 
 /**
@@ -90,6 +90,7 @@ export function HeroSection() {
         const title = titleRef.current;
         if (wrap && title) fitTitleToWidth(title, wrap);
         createHeroGsapTimeline(root);
+        createHeroScrollParallax(root);
       };
 
       if (document.fonts?.status === 'loaded') {

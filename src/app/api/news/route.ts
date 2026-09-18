@@ -4,8 +4,15 @@ import { getAdminSession, requireAdmin } from '@/lib/auth';
 import { z } from 'zod';
 import { mediaUrlSchema } from '@/lib/validation';
 import { parseListQuery } from '@/lib/pagination';
+import { slugify, uniqueSlugCandidate } from '@/lib/slug';
 
 const articleCreateSchema = z.object({
+  slug: z
+    .string()
+    .max(100)
+    .optional()
+    .or(z.literal(''))
+    .transform((v) => (typeof v === 'string' ? v.trim() : v)),
   titleEn: z.string().max(300).optional(),
   titleAr: z.string().max(300).optional(),
   excerptEn: z.string().max(2000).optional(),
@@ -17,6 +24,19 @@ const articleCreateSchema = z.object({
   imageUrl: mediaUrlSchema.optional().or(z.literal('')),
   isPublished: z.boolean().optional(),
 });
+
+async function resolveSlug(preferred: string | undefined, titleEn: string, excludeId?: number) {
+  const rows = await db.newsArticle.findMany({
+    select: { id: true, slug: true },
+  });
+  const existing = new Set(
+    rows
+      .filter((r) => r.id !== excludeId && r.slug)
+      .map((r) => r.slug as string),
+  );
+  const base = slugify(preferred || titleEn || 'news');
+  return uniqueSlugCandidate(base, existing);
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,9 +66,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = parsed.data;
+    const titleEn = data.titleEn || '';
+    const slug = await resolveSlug(data.slug, titleEn);
+
     const article = await db.newsArticle.create({
       data: {
-        titleEn: data.titleEn || '',
+        slug,
+        titleEn,
         titleAr: data.titleAr || '',
         excerptEn: data.excerptEn || '',
         excerptAr: data.excerptAr || '',
@@ -83,11 +107,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid article data' }, { status: 400 });
     }
 
+    const data = parsed.data;
+    const titleEn = data.titleEn || '';
+    const slug = await resolveSlug(data.slug, titleEn, Number(id));
+
     const article = await db.newsArticle.update({
       where: { id: Number(id) },
-      data: parsed.data,
+      data: {
+        ...data,
+        slug,
+      },
     });
-
     return NextResponse.json(article);
   } catch {
     return NextResponse.json({ error: 'Failed to update article' }, { status: 500 });

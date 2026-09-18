@@ -10,6 +10,7 @@ generator client {
 
 model NewsArticle {
   id          Int      @id @default(autoincrement())
+  slug        String   @unique
   titleEn     String
   titleAr     String
   excerptEn   String
@@ -49,19 +50,27 @@ model Partner {
 }
 
 model JobPosition {
-  id              Int      @id @default(autoincrement())
-  titleEn         String
-  titleAr         String
-  departmentEn    String
-  departmentAr    String
-  location        String   @default("Baghdad")
-  type            String   @default("Full-time")
-  descriptionEn   String   @default("")
-  descriptionAr   String   @default("")
-  applicationEmail String  @default("")
-  sortOrder       Int      @default(0)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
+  id                 Int      @id @default(autoincrement())
+  slug               String   @unique
+  titleEn            String
+  titleAr            String
+  departmentEn       String
+  departmentAr       String
+  location           String   @default("Baghdad")
+  type               String   @default("Full-time")
+  experienceLevel    String   @default("")
+  descriptionEn      String   @default("")
+  descriptionAr      String   @default("")
+  responsibilitiesEn String   @default("")
+  responsibilitiesAr String   @default("")
+  requirementsEn     String   @default("")
+  requirementsAr     String   @default("")
+  offerEn            String   @default("")
+  offerAr            String   @default("")
+  applicationEmail   String   @default("")
+  sortOrder          Int      @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
 }
 
 model SiteSettings {
@@ -77,6 +86,7 @@ model SiteSettings {
   descriptionEn   String   @default("")
   descriptionAr   String   @default("")
   productionStats Json     @default("[]")
+  homepageSections Json    @default("[]")
   updatedAt       DateTime @updatedAt
 }
 

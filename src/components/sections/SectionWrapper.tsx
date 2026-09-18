@@ -3,11 +3,10 @@
 import { useRef, useEffect, type ReactNode } from 'react';
 import { useAppStore } from '@/store';
 import {
-  gsap,
   useGSAP,
-  prefersReducedMotion,
   revealSectionHeader,
-  EASE,
+  revealOnScroll,
+  SCROLL,
 } from '@/lib/gsap-site';
 
 interface SectionWrapperProps {
@@ -19,7 +18,6 @@ interface SectionWrapperProps {
   subtitle?: string;
   dark?: boolean;
   noPadding?: boolean;
-  /** Sticky/pin stacks need visible overflow */
   overflowVisible?: boolean;
 }
 
@@ -41,7 +39,7 @@ export function SectionWrapper({
       if (!headerRef.current) return;
       revealSectionHeader(headerRef.current);
     },
-    { scope: headerRef, dependencies: [badge, title, subtitle] },
+    { scope: headerRef, dependencies: [badge, title, subtitle], revertOnUpdate: true },
   );
 
   return (
@@ -103,10 +101,12 @@ export function FadeIn({
   children,
   delay = 0,
   className = '',
+  y = 28,
 }: {
   children: ReactNode;
   delay?: number;
   className?: string;
+  y?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -114,26 +114,14 @@ export function FadeIn({
     () => {
       const el = ref.current;
       if (!el) return;
-
-      if (prefersReducedMotion()) {
-        gsap.set(el, { y: 0 });
-        return;
-      }
-
-      gsap.from(el, {
-        y: 22,
-        duration: 0.65,
+      revealOnScroll(el, {
+        y,
         delay,
-        ease: EASE,
-        immediateRender: false,
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 88%',
-          toggleActions: 'play none none none',
-        },
+        start: SCROLL.default,
+        duration: 0.95,
       });
     },
-    { scope: ref, dependencies: [delay] },
+    { scope: ref, dependencies: [delay, y], revertOnUpdate: true },
   );
 
   return (
@@ -146,9 +134,13 @@ export function FadeIn({
 export function StaggerContainer({
   children,
   className = '',
+  stagger = 0.08,
+  y = 28,
 }: {
   children: ReactNode;
   className?: string;
+  stagger?: number;
+  y?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -157,27 +149,18 @@ export function StaggerContainer({
       const el = ref.current;
       if (!el) return;
 
-      const items = gsap.utils.toArray<HTMLElement>('[data-stagger-item]', el);
+      const items = el.querySelectorAll<HTMLElement>('[data-stagger-item]');
+      if (!items.length) return;
 
-      if (prefersReducedMotion()) {
-        gsap.set(items, { y: 0 });
-        return;
-      }
-
-      gsap.from(items, {
-        y: 22,
-        duration: 0.65,
-        stagger: 0.07,
-        ease: EASE,
-        immediateRender: false,
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 85%',
-          toggleActions: 'play none none none',
-        },
+      revealOnScroll(items, {
+        trigger: el,
+        y,
+        stagger: { each: stagger, from: 'start' },
+        start: SCROLL.default,
+        duration: 0.9,
       });
     },
-    { scope: ref },
+    { scope: ref, dependencies: [stagger, y], revertOnUpdate: true },
   );
 
   return (
@@ -195,10 +178,7 @@ export function StaggerItem({
   className?: string;
 }) {
   return (
-    <div
-      data-stagger-item
-      className={`transition-transform duration-200 hover:-translate-y-0.5 ${className}`}
-    >
+    <div data-stagger-item className={className}>
       {children}
     </div>
   );

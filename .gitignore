@@ -54,3 +54,6 @@ server.log
 # Skills directory
 /skills/
 testsprite_tests\tmp\config.json
+
+# user uploads (local only)
+/uploads/

@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useAppStore } from '@/store';
 import { useProductionStats } from '@/hooks/use-production-stats';
-import { gsap, useGSAP, gsapCountUp, prefersReducedMotion, EASE } from '@/lib/gsap-site';
+import { gsap, useGSAP, gsapCountUp, prefersReducedMotion, revealOnScroll, SCROLL } from '@/lib/gsap-site';
 
 function AnimatedCounter({ value }: { value: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -64,25 +64,17 @@ export function StatsSection() {
       const cards = gsap.utils.toArray<HTMLElement>('[data-stat-card]', root);
       const targets = [label, statement, ...cards].filter(Boolean) as HTMLElement[];
 
-      // Never leave copy at opacity 0 — contrast must stay readable
-      gsap.set(targets, { autoAlpha: 1, clearProps: 'opacity,visibility' });
-
       if (prefersReducedMotion()) {
-        gsap.set(targets, { y: 0 });
+        gsap.set(targets, { clearProps: 'opacity,visibility,transform' });
         return;
       }
 
-      gsap.from(targets, {
-        y: 18,
-        duration: 0.65,
-        stagger: 0.06,
-        ease: EASE,
-        immediateRender: false,
-        scrollTrigger: {
-          trigger: root,
-          start: 'top 85%',
-          toggleActions: 'play none none none',
-        },
+      revealOnScroll(targets, {
+        trigger: root,
+        start: SCROLL.default,
+        stagger: 0.07,
+        y: 24,
+        duration: 0.95,
       });
     },
     { scope: rootRef, dependencies: [locale, capacityItems.length] },

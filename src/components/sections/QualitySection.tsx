@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SectionWrapper } from '@/components/sections/SectionWrapper';
-import { gsap, ScrollTrigger, useGSAP, prefersReducedMotion, EASE } from '@/lib/gsap-site';
+import { gsap, ScrollTrigger, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL } from '@/lib/gsap-site';
 
 function pinOffsetPx(): number {
   const header = document.querySelector('header');
@@ -44,17 +44,11 @@ export function QualitySection() {
       const certBadges = gsap.utils.toArray<HTMLElement>('[data-cert-badge]', root);
 
       if (headerNodes.length) {
-        gsap.from(headerNodes, {
-          y: prefersReducedMotion() ? 0 : 24,
-          autoAlpha: prefersReducedMotion() ? 1 : 0,
-          duration: 0.7,
+        revealOnScroll(headerNodes, {
+          trigger: root,
+          start: SCROLL.default,
           stagger: 0.08,
-          ease: EASE,
-          scrollTrigger: {
-            trigger: root,
-            start: 'top 82%',
-            toggleActions: 'play none none none',
-          },
+          y: 22,
         });
       }
 
@@ -86,14 +80,14 @@ export function QualitySection() {
             inner,
             { scale: 1, opacity: 1 },
             {
-              scale: 0.97,
-              opacity: 0.45,
+              scale: 0.98,
+              opacity: 0.5,
               ease: 'none',
               scrollTrigger: {
                 trigger: cards[i + 1],
                 start: 'top bottom',
                 end: start,
-                scrub: 0.5,
+                scrub: 0.6,
                 invalidateOnRefresh: true,
               },
             },
@@ -107,46 +101,23 @@ export function QualitySection() {
 
       mm.add('(max-width: 1023px)', () => {
         if (prefersReducedMotion()) return;
-        cards.forEach((card) => {
-          const inner = card.querySelector('[data-standard-inner]');
-          if (!inner) return;
-          gsap.from(inner, {
-            y: 28,
-            autoAlpha: 0,
-            duration: 0.65,
-            ease: EASE,
-            scrollTrigger: {
-              trigger: card,
-              start: 'top 88%',
-              toggleActions: 'play none none none',
-            },
-          });
+        const inners = cards
+          .map((card) => card.querySelector<HTMLElement>('[data-standard-inner]'))
+          .filter(Boolean) as HTMLElement[];
+        revealOnScroll(inners, {
+          trigger: stack ?? root,
+          start: SCROLL.default,
+          stagger: 0.1,
+          y: 24,
         });
       });
 
       if (certBar && certBadges.length && !prefersReducedMotion()) {
-        gsap.from(certBar, {
-          y: 24,
-          autoAlpha: 0,
-          duration: 0.65,
-          ease: EASE,
-          scrollTrigger: {
-            trigger: certBar,
-            start: 'top 88%',
-            toggleActions: 'play none none none',
-          },
-        });
-        gsap.from(certBadges, {
-          y: 12,
-          autoAlpha: 0,
-          duration: 0.45,
+        revealOnScroll([certBar, ...certBadges], {
+          trigger: certBar,
+          start: SCROLL.default,
           stagger: 0.05,
-          ease: EASE,
-          scrollTrigger: {
-            trigger: certBar,
-            start: 'top 84%',
-            toggleActions: 'play none none none',
-          },
+          y: 18,
         });
       }
 

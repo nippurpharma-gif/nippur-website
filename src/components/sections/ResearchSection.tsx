@@ -1,10 +1,12 @@
 'use client';
 
+import { useRef } from 'react';
 import Image from 'next/image';
 import { Beaker, Microscope, Clock, Globe, Handshake } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SectionWrapper, FadeIn, StaggerContainer, StaggerItem } from '@/components/sections/SectionWrapper';
 import { SurfaceCard } from '@/components/ui/surface-card';
+import { useGSAP, prefersReducedMotion, parallaxMedia } from '@/lib/gsap-site';
 
 const focusAreaIcons: Record<string, React.ReactNode> = {
   beaker: <Beaker className="size-5.5" />,
@@ -15,6 +17,18 @@ const focusAreaIcons: Record<string, React.ReactNode> = {
 
 export function ResearchSection() {
   const { t } = useAppStore();
+  const mediaRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return;
+      const frame = mediaRef.current;
+      const img = frame?.querySelector('img');
+      if (!frame || !img) return;
+      parallaxMedia(img, frame, { yPercent: 5, scrub: 1.15 });
+    },
+    { scope: mediaRef, revertOnUpdate: true },
+  );
 
   return (
     <SectionWrapper
@@ -25,14 +39,14 @@ export function ResearchSection() {
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-start">
         <FadeIn className="order-2 lg:order-1">
-          <SurfaceCard media>
+          <SurfaceCard media ref={mediaRef} className="overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--ink)]/40 to-transparent z-10" />
             <Image
               src="/images/research-lab.png"
               alt="NIPPUR Pharma Research Laboratory"
               width={800}
               height={600}
-              className="w-full h-auto object-cover"
+              className="w-full h-auto object-cover will-change-transform"
             />
           </SurfaceCard>
         </FadeIn>
@@ -58,7 +72,7 @@ export function ResearchSection() {
         </div>
       </div>
 
-      <FadeIn delay={0.25}>
+      <FadeIn delay={0.15}>
         <SurfaceCard className="mt-12 lg:mt-16 p-7 sm:p-9 lg:p-10">
           <div className="flex flex-col lg:flex-row items-start lg:items-center gap-6">
             <div className="size-12 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">
