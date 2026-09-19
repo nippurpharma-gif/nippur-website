@@ -118,22 +118,22 @@ export const getHomePageData = cache(async (): Promise<HomePageData> => {
       db.product.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
-        take: 200,
+        take: 48,
       }),
       db.jobPosition.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
-        take: 200,
+        take: 12,
       }),
       db.newsArticle.findMany({
         where: { isPublished: true },
         orderBy: { createdAt: 'desc' },
-        take: 200,
+        take: 6,
       }),
       db.partner.findMany({
         where: { isActive: true },
         orderBy: { sortOrder: 'asc' },
-        take: 200,
+        take: 24,
       }),
     ]);
 

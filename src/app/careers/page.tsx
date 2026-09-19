@@ -1,4 +1,3 @@
-import { SiteChrome } from '@/components/layout/SiteChrome';
 import { CareersIndexJsonLd } from '@/components/seo/JsonLd';
 import { CareersIndex } from '@/components/careers/CareersIndex';
 import { getActiveJobs } from '@/lib/jobs';
@@ -18,9 +17,9 @@ export default async function CareersPage() {
   const jobs = await getActiveJobs();
 
   return (
-    <SiteChrome>
+    <>
       <CareersIndexJsonLd />
       <CareersIndex jobs={jobs} />
-    </SiteChrome>
+    </>
   );
 }

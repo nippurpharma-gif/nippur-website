@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { SiteChrome } from '@/components/layout/SiteChrome';
 import { JobPostingJsonLd } from '@/components/seo/JsonLd';
 import { JobDetailView } from '@/components/careers/JobDetailView';
 import { getAllActiveJobSlugs, getJobBySlug, getRelatedJobs } from '@/lib/jobs';
@@ -41,9 +40,9 @@ export default async function JobDetailPage({
   const locale = parseLocale(cookieStore.get(LOCALE_COOKIE)?.value);
 
   return (
-    <SiteChrome>
+    <>
       <JobPostingJsonLd job={job} locale={locale} />
       <JobDetailView job={job} related={related} />
-    </SiteChrome>
+    </>
   );
 }

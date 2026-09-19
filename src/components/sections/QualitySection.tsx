@@ -123,7 +123,7 @@ export function QualitySection() {
 
       return () => mm.revert();
     },
-    { scope: sectionRef, dependencies: [locale], revertOnUpdate: true },
+    { scope: sectionRef, revertOnUpdate: true },
   );
 
   return (
@@ -207,6 +207,7 @@ export function QualitySection() {
                           alt={standard.title}
                           fill
                           sizes="(max-width: 768px) 100vw, 28vw"
+                          loading="lazy"
                           className="object-cover"
                         />
                       </div>

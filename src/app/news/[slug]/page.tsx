@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { SiteChrome } from '@/components/layout/SiteChrome';
 import { NewsArticleJsonLd } from '@/components/seo/JsonLd';
 import { NewsArticleView } from '@/components/news/NewsArticleView';
 import { getAllPublishedSlugs, getNewsBySlug, getRelatedNews } from '@/lib/news';
@@ -41,9 +40,9 @@ export default async function NewsArticlePage({
   const locale = parseLocale(cookieStore.get(LOCALE_COOKIE)?.value);
 
   return (
-    <SiteChrome>
+    <>
       <NewsArticleJsonLd article={article} locale={locale} />
       <NewsArticleView article={article} related={related} />
-    </SiteChrome>
+    </>
   );
 }

@@ -46,6 +46,8 @@ export function ResearchSection() {
               alt="NIPPUR Pharma Research Laboratory"
               width={800}
               height={600}
+              loading="lazy"
+              sizes="(max-width: 1024px) 100vw, 50vw"
               className="w-full h-auto object-cover will-change-transform"
             />
           </SurfaceCard>

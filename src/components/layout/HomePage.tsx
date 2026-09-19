@@ -18,6 +18,7 @@ import { PartnersSection } from '@/components/sections/PartnersSection';
 import { ContactSection } from '@/components/sections/ContactSection';
 import { CTASection } from '@/components/sections/CTASection';
 import { ScrollTrigger } from '@/lib/gsap-site';
+import { scrollToHashTarget } from '@/lib/scroll-to-section';
 import { useAppStore } from '@/store';
 import type { HomePageData } from '@/lib/home-data';
 import {
@@ -42,6 +43,13 @@ export function HomePage({ data }: { data: HomePageData }) {
   useEffect(() => {
     void document.fonts.ready.then(() => ScrollTrigger.refresh());
   }, [locale]);
+
+  useEffect(() => {
+    if (window.location.hash) {
+      const timer = window.setTimeout(() => scrollToHashTarget(), 50);
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
 
   const managedOrder = useMemo(() => {
     const sections = parseHomepageSections(data.settings?.homepageSections ?? DEFAULT_HOMEPAGE_SECTIONS);

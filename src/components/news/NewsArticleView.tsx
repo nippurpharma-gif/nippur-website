@@ -72,6 +72,8 @@ export function NewsArticleView({
             <img
               src={article.imageUrl}
               alt={title}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-cover"
             />
           </div>

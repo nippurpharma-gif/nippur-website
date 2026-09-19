@@ -145,7 +145,8 @@
   --space-lg: 20px;
   --space-xl: 30px;
   --space-xxl: 40px;
-  --space-gutter: 80px;
+  /* Wider side gutters so content breathes on laptop/desktop widths */
+  --space-gutter: 112px;
   --space-section: 96px;
   --container-max: 1440px;
   --radius-xs: 4px;
@@ -268,23 +269,29 @@
   width: 100%;
   max-width: var(--container-max);
   margin-inline: auto;
-  padding-inline: var(--space-lg);
+  padding-inline: var(--space-xl);
   box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .site-container {
-    padding-inline: var(--space-xxl);
+    padding-inline: clamp(2.5rem, 5vw, 3.5rem);
   }
 }
 
 @media (min-width: 1024px) {
   .site-container {
-    /* Outer 80px gutters until the 1440px cap; then centered */
+    /* Outer gutters until the 1440px cap; then centered */
     width: min(100% - (2 * var(--space-gutter)), var(--container-max));
     max-width: var(--container-max);
     margin-inline: auto;
     padding-inline: 0;
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-container {
+    width: min(100% - 15rem, var(--container-max));
   }
 }
 

@@ -3,13 +3,15 @@
 import { useRef } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
-import { gsap, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL } from '@/lib/gsap-site';
+import { gsap, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL, scrubParallax } from '@/lib/gsap-site';
 import { scrollToSection } from '@/lib/scroll-to-section';
 
 export function CTASection() {
-  const { t, locale } = useAppStore();
+  const { t } = useAppStore();
   const rootRef = useRef<HTMLElement>(null);
 
+  // Do not recreate ScrollTriggers on locale change — dir flip + mass revert
+  // was crashing GSAP ("Cannot read properties of undefined (reading 'end')").
   useGSAP(
     () => {
       const root = rootRef.current;
@@ -23,23 +25,7 @@ export function CTASection() {
         return;
       }
 
-      if (bg) {
-        gsap.fromTo(
-          bg,
-          { yPercent: -6 },
-          {
-            yPercent: 6,
-            ease: 'none',
-            force3D: true,
-            scrollTrigger: {
-              trigger: root,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 1.2,
-            },
-          },
-        );
-      }
+      if (bg) scrubParallax(bg, root, { from: -6, to: 6, scrub: 1.2 });
 
       revealOnScroll(parts, {
         trigger: root,
@@ -49,7 +35,7 @@ export function CTASection() {
         duration: 0.95,
       });
     },
-    { scope: rootRef, dependencies: [locale], revertOnUpdate: true },
+    { scope: rootRef },
   );
 
   return (

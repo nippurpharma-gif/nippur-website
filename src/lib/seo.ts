@@ -68,15 +68,26 @@ export function buildRootMetadata(locale: Locale): Metadata {
     },
     description: t.description,
     keywords,
-    authors: [{ name: 'NIPPUR Pharma' }],
+    authors: [{ name: 'NIPPUR Pharma', url: site }],
     creator: 'NIPPUR Pharma',
     publisher: 'NIPPUR Pharma',
     category: 'Pharmaceutical Manufacturing',
+    applicationName: 'NIPPUR Pharma',
+    referrer: 'origin-when-cross-origin',
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
     alternates: {
       canonical: '/',
       languages: {
-        en: '/',
-        ar: '/',
+        'en-US': '/',
+        'ar-IQ': '/',
+        'x-default': '/',
+      },
+      types: {
+        'text/plain': '/llms.txt',
       },
     },
     openGraph: {
@@ -85,13 +96,14 @@ export function buildRootMetadata(locale: Locale): Metadata {
       siteName: 'NIPPUR Pharma',
       type: 'website',
       locale: locale === 'ar' ? 'ar_IQ' : 'en_US',
+      alternateLocale: locale === 'ar' ? ['en_US'] : ['ar_IQ'],
       url: site,
       images: [
         {
           url: ogImage,
           width: 1200,
           height: 630,
-          alt: 'NIPPUR Pharma manufacturing facility',
+          alt: 'NIPPUR Pharma manufacturing facility in Baghdad, Iraq',
         },
       ],
     },
@@ -104,6 +116,16 @@ export function buildRootMetadata(locale: Locale): Metadata {
     robots: {
       index: true,
       follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+        'max-video-preview': -1,
+      },
+    },
+    other: {
+      'ai-content': 'index',
     },
   };
 }
@@ -115,6 +137,7 @@ export function buildNewsIndexMetadata(locale: Locale): Metadata {
   const description = isAr
     ? 'آخر أخبار نيبور فارما حول التصنيع الدوائي، شهادات ممارسات التصنيع الجيد، والشراكات في العراق والمنطقة.'
     : 'Latest NIPPUR Pharma news on GMP manufacturing, cephalosporin production, partnerships, and pharmaceutical developments in Iraq.';
+  const ogImage = `${site}/images/factory-building.png`;
 
   return {
     title,
@@ -131,7 +154,15 @@ export function buildNewsIndexMetadata(locale: Locale): Metadata {
       type: 'website',
       siteName: 'NIPPUR Pharma',
       locale: isAr ? 'ar_IQ' : 'en_US',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} | NIPPUR Pharma`,
+      description,
+      images: [ogImage],
+    },
+    robots: { index: true, follow: true },
   };
 }
 
@@ -189,6 +220,7 @@ export function buildCareersIndexMetadata(locale: Locale): Metadata {
   const description = isAr
     ? 'انضم إلى فريق نيبور فارما في بغداد — وظائف في التصنيع الدوائي وضمان الجودة والبحث والتطوير.'
     : 'Join the NIPPUR Pharma team in Baghdad — open roles in pharmaceutical manufacturing, quality assurance, and R&D.';
+  const ogImage = `${site}/images/factory-building.png`;
 
   return {
     title,
@@ -206,7 +238,15 @@ export function buildCareersIndexMetadata(locale: Locale): Metadata {
       type: 'website',
       siteName: 'NIPPUR Pharma',
       locale: isAr ? 'ar_IQ' : 'en_US',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${title} | NIPPUR Pharma`,
+      description,
+      images: [ogImage],
+    },
+    robots: { index: true, follow: true },
   };
 }
 

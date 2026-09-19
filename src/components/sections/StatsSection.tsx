@@ -77,7 +77,7 @@ export function StatsSection() {
         duration: 0.95,
       });
     },
-    { scope: rootRef, dependencies: [locale, capacityItems.length] },
+    { scope: rootRef, dependencies: [capacityItems.length], revertOnUpdate: true },
   );
 
   return (

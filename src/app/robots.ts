@@ -23,7 +23,7 @@ export default function robots(): MetadataRoute.Robots {
       },
       ...AI_BOTS.map((userAgent) => ({
         userAgent,
-        allow: ['/', '/news', '/llms.txt', '/sitemap.xml'],
+        allow: ['/', '/news', '/careers', '/llms.txt', '/sitemap.xml'],
         disallow: ['/admin', '/login', '/api/'],
       })),
     ],

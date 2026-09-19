@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AppProvider } from '@/components/layout/AppProvider';
+import { RouteShell } from '@/components/layout/RouteShell';
 import { LOCALE_COOKIE, parseLocale } from '@/lib/locale';
 import { buildRootMetadata } from '@/lib/seo';
 
@@ -11,6 +12,7 @@ const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
   display: 'swap',
+  preload: true,
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -18,6 +20,7 @@ const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['400', '500'],
   display: 'swap',
+  preload: false,
 });
 
 const cairo = Cairo({
@@ -25,6 +28,7 @@ const cairo = Cairo({
   subsets: ['arabic', 'latin'],
   weight: ['400', '500', '600', '700', '800'],
   display: 'swap',
+  preload: true,
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -44,6 +48,9 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
+      <head>
+        <link rel="preload" as="image" href="/images/factory-real.jpeg" fetchPriority="high" />
+      </head>
       <body
         className={`${inter.variable} ${ibmPlexMono.variable} ${cairo.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning
@@ -54,7 +61,9 @@ export default async function RootLayout({
         >
           Skip to content / الانتقال إلى المحتوى الرئيسي
         </a>
-        <AppProvider initialLocale={locale}>{children}</AppProvider>
+        <AppProvider initialLocale={locale}>
+          <RouteShell>{children}</RouteShell>
+        </AppProvider>
         <Toaster />
       </body>
     </html>

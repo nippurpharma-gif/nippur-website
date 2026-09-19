@@ -64,6 +64,8 @@ export function ManufacturingSection() {
               <img
                 src="/images/manufacturing-line.png"
                 alt="NIPPUR Pharma Manufacturing Line"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-[300px] lg:h-[400px] object-cover will-change-transform"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--ink)]/75 via-transparent to-transparent" />

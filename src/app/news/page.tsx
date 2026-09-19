@@ -1,4 +1,3 @@
-import { SiteChrome } from '@/components/layout/SiteChrome';
 import { NewsIndexJsonLd } from '@/components/seo/JsonLd';
 import { NewsIndex } from '@/components/news/NewsIndex';
 import { getPublishedNews } from '@/lib/news';
@@ -18,9 +17,9 @@ export default async function NewsPage() {
   const articles = await getPublishedNews();
 
   return (
-    <SiteChrome>
+    <>
       <NewsIndexJsonLd />
       <NewsIndex articles={articles} />
-    </SiteChrome>
+    </>
   );
 }

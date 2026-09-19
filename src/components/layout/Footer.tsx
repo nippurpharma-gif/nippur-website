@@ -99,7 +99,7 @@ export function Footer() {
         });
       }
     },
-    { scope: rootRef, dependencies: [locale], revertOnUpdate: true },
+    { scope: rootRef },
   );
 
   const sections = settings?.homepageSections?.length

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, Languages } from 'lucide-react';
 import { useAppStore } from '@/store';
@@ -10,7 +10,7 @@ import { useSiteSettings } from '@/hooks/use-site-settings';
 import { cn } from '@/lib/utils';
 import { motionTransition } from '@/lib/motion-craft';
 import { persistLocale } from '@/lib/locale';
-import { scrollToSection as scrollTo } from '@/lib/scroll-to-section';
+import { scrollToSection as scrollTo, sectionHref } from '@/lib/scroll-to-section';
 import {
   DEFAULT_HOMEPAGE_SECTIONS,
   isSectionVisible,
@@ -47,6 +47,7 @@ export function Header({ variant = 'home' }: { variant?: 'home' | 'inner' }) {
     useAppStore();
   const { settings } = useSiteSettings();
   const pathname = usePathname();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(variant === 'inner');
   const isHome = pathname === '/';
   const solid = variant === 'inner' || scrolled;
@@ -91,22 +92,24 @@ export function Header({ variant = 'home' }: { variant?: 'home' | 'inner' }) {
 
   const goNav = useCallback(
     (key: string) => {
-      if (key === 'news') {
-        setMobileMenuOpen(false);
-        if (pathname?.startsWith('/news')) return;
-        window.location.assign('/news');
-        return;
-      }
-      if (key === 'careers') {
-        setMobileMenuOpen(false);
-        if (pathname?.startsWith('/careers')) return;
-        window.location.assign('/careers');
-        return;
-      }
-      scrollTo(key);
       setMobileMenuOpen(false);
+
+      // Soft-navigate to dedicated routes (instant shell + streamed content)
+      if (key === 'news' || key === 'careers') {
+        const href = sectionHref(key);
+        if (pathname === href || pathname?.startsWith(`${href}/`)) return;
+        router.push(href);
+        return;
+      }
+
+      if (!isHome) {
+        router.push(sectionHref(key));
+        return;
+      }
+
+      scrollTo(key);
     },
-    [pathname, setMobileMenuOpen],
+    [isHome, pathname, router, setMobileMenuOpen],
   );
 
   const toggleLanguage = useCallback(() => {

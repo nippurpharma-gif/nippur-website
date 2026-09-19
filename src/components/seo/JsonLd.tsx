@@ -25,17 +25,26 @@ export function OrganizationJsonLd({ settings }: { settings: SiteSettings | null
     '@type': ['Organization', 'MedicalOrganization'],
     name,
     alternateName: settings?.companyNameAr || 'نيبور فارما',
+    legalName: name,
     url: site,
-    logo,
+    logo: {
+      '@type': 'ImageObject',
+      url: logo,
+    },
+    image: `${site}/images/factory-building.png`,
     email: settings?.email || undefined,
     telephone: settings?.phone || undefined,
     description:
       settings?.descriptionEn ||
-      'Pharmaceutical manufacturer in Baghdad, Iraq producing GMP-compliant cephalosporins and essential medicines.',
-    areaServed: {
-      '@type': 'Country',
-      name: 'Iraq',
+      'Pharmaceutical manufacturer in Baghdad, Iraq producing GMP-compliant cephalosporins and essential medicines with European manufacturing standards.',
+    foundingLocation: {
+      '@type': 'Place',
+      name: 'Baghdad, Iraq',
     },
+    areaServed: [
+      { '@type': 'Country', name: 'Iraq' },
+      { '@type': 'AdministrativeArea', name: 'Middle East' },
+    ],
     address: {
       '@type': 'PostalAddress',
       streetAddress: settings?.address || 'Baghdad, Iraq',
@@ -43,15 +52,34 @@ export function OrganizationJsonLd({ settings }: { settings: SiteSettings | null
       addressCountry: 'IQ',
     },
     knowsAbout: ENTITY_KEYWORDS_EN,
+    brand: {
+      '@type': 'Brand',
+      name: 'NIPPUR Pharma',
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        contactType: 'customer service',
+        email: settings?.email || undefined,
+        telephone: settings?.phone || undefined,
+        availableLanguage: ['English', 'Arabic'],
+        areaServed: 'IQ',
+      },
+    ],
   };
 
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name,
+    alternateName: 'نيبور فارما',
     url: site,
     inLanguage: ['en', 'ar'],
     publisher: { '@type': 'Organization', name, url: site },
+    about: {
+      '@type': 'Thing',
+      name: 'Pharmaceutical manufacturing',
+    },
   };
 
   return <JsonLdScript data={[organization, website]} />;

@@ -40,6 +40,48 @@ function clearReveal(els: gsap.TweenTarget) {
   gsap.set(els, { clearProps: 'opacity,visibility,transform' });
 }
 
+function isLiveElement(el: Element | null | undefined): el is HTMLElement {
+  return !!el && el instanceof HTMLElement && el.isConnected;
+}
+
+/**
+ * Scrubbed yPercent parallax — validates nodes are mounted before creating
+ * ScrollTrigger (avoids GSAP crash on RTL/LTR locale flips).
+ */
+export function scrubParallax(
+  target: HTMLElement,
+  trigger: HTMLElement,
+  options?: {
+    from?: number;
+    to?: number;
+    scrub?: number;
+    start?: string;
+    end?: string;
+  },
+) {
+  if (prefersReducedMotion()) return null;
+  if (!isLiveElement(target) || !isLiveElement(trigger)) return null;
+
+  return gsap.fromTo(
+    target,
+    { yPercent: options?.from ?? -6 },
+    {
+      yPercent: options?.to ?? 6,
+      ease: 'none',
+      force3D: false,
+      overwrite: 'auto',
+      scrollTrigger: {
+        trigger,
+        start: options?.start ?? 'top bottom',
+        end: options?.end ?? 'bottom top',
+        scrub: options?.scrub ?? 1.2,
+        invalidateOnRefresh: true,
+        fastScrollEnd: true,
+      },
+    },
+  );
+}
+
 /**
  * Best-practice scroll reveal: set hidden state first, then animate TO visible.
  * Avoids the classic `from()` flicker (visible → jump to hidden → animate).
@@ -55,7 +97,7 @@ export function revealOnScroll(
     delay?: number;
   },
 ) {
-  const els = gsap.utils.toArray<HTMLElement>(targets);
+  const els = gsap.utils.toArray<HTMLElement>(targets).filter(isLiveElement);
   if (!els.length) return null;
 
   if (prefersReducedMotion()) {
@@ -63,8 +105,17 @@ export function revealOnScroll(
     return null;
   }
 
+  let trigger: Element | null = els[0];
+  if (typeof options?.trigger === 'string') {
+    trigger = document.querySelector(options.trigger);
+  } else if (options?.trigger) {
+    trigger = options.trigger;
+  }
+  if (!trigger || (trigger instanceof HTMLElement && !trigger.isConnected)) {
+    return null;
+  }
+
   const y = options?.y ?? REVEAL_Y;
-  // Prefer composite-friendly transforms without forcing a sticky-breaking layer
   gsap.set(els, { opacity: 0, y });
 
   return gsap.to(els, {
@@ -77,10 +128,11 @@ export function revealOnScroll(
     overwrite: 'auto',
     force3D: false,
     scrollTrigger: {
-      trigger: (options?.trigger ?? els[0]) as Element,
+      trigger,
       start: options?.start ?? SCROLL.default,
       once: true,
       fastScrollEnd: true,
+      invalidateOnRefresh: true,
     },
   });
 }
@@ -127,26 +179,15 @@ export function createHeroGsapTimeline(root: HTMLElement): gsap.core.Timeline | 
  * does not promote above the page content stack.
  */
 export function createHeroScrollParallax(root: HTMLElement) {
-  if (prefersReducedMotion()) return null;
-
   const bg = root.querySelector<HTMLElement>('[data-hero="bg"]');
   if (!bg) return null;
-
-  return gsap.fromTo(
-    bg,
-    { yPercent: -4 },
-    {
-      yPercent: 8,
-      ease: 'none',
-      force3D: false,
-      scrollTrigger: {
-        trigger: root,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1.4,
-      },
-    },
-  );
+  return scrubParallax(bg, root, {
+    from: -4,
+    to: 8,
+    scrub: 1.4,
+    start: 'top top',
+    end: 'bottom top',
+  });
 }
 
 export function gsapCountUp(

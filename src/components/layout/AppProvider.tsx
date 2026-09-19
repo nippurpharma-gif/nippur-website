@@ -47,6 +47,20 @@ export function AppProvider({
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+
+    let nested = 0;
+    const outer = requestAnimationFrame(() => {
+      nested = requestAnimationFrame(() => {
+        void import('@/lib/gsap-site').then(({ ScrollTrigger }) => {
+          ScrollTrigger.refresh();
+        });
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(nested);
+    };
   }, [locale]);
 
   return (
