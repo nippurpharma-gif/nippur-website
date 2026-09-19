@@ -61,7 +61,7 @@ export function ApplicationFormDialog({
         cvHint: 'PDF أو DOC، بحد أقصى 5 ميجابايت',
         submit: 'تقديم الطلب',
         submitting: 'جارِ التقديم...',
-        success: 'تم تقديم طلبك بنجاح!',
+        success: 'تم التقديم بنجاح وسيتم التواصل معك من قبل الموارد البشرية قريباً',
         error: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
         chooseFile: 'اختر ملف',
       }
@@ -77,7 +77,8 @@ export function ApplicationFormDialog({
         cvHint: 'PDF or DOC, max 5MB',
         submit: 'Submit Application',
         submitting: 'Submitting...',
-        success: 'Your application has been submitted successfully!',
+        success:
+          'Application submitted successfully. Human Resources will contact you soon.',
         error: 'Something went wrong. Please try again.',
         chooseFile: 'Choose File',
       };
@@ -167,7 +168,7 @@ export function ApplicationFormDialog({
 
         if (!res.ok) throw new Error('Submission failed');
 
-        toast.success(labels.success);
+        toast.success(labels.success, { duration: 6000 });
         resetForm();
         onOpenChange(false);
       } catch {

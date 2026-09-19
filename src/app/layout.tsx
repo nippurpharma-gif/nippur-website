@@ -3,6 +3,7 @@ import { Inter, IBM_Plex_Mono, Cairo } from 'next/font/google';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { SonnerToaster } from '@/components/ui/sonner';
 import { AppProvider } from '@/components/layout/AppProvider';
 import { RouteShell } from '@/components/layout/RouteShell';
 import { LOCALE_COOKIE, parseLocale } from '@/lib/locale';
@@ -71,6 +72,7 @@ export default async function RootLayout({
           <RouteShell>{children}</RouteShell>
         </AppProvider>
         <Toaster />
+        <SonnerToaster />
       </body>
     </html>
   );

@@ -141,8 +141,8 @@ export function HeroSection() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.45),transparent_70%)]" />
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-[1] site-container pb-5 sm:pb-8 lg:pb-10 pt-28">
-        <div className="max-w-[18rem] sm:max-w-sm lg:max-w-md space-y-3 mb-3 sm:mb-4 lg:mb-5">
+      <div className={`absolute inset-x-0 bottom-0 z-[1] site-container pb-5 sm:pb-8 ${locale === 'en' ? 'lg:pb-1' : 'lg:pb-0'}  pt-28`}>
+        <div className={`max-w-[18rem] sm:max-w-sm lg:max-w-md space-y-3 mb-3 sm:mb-4 lg:-mb-5 ${locale === 'en' ? 'lg:mb-5' : 'lg:-mb-10'}`}>
           <p
             data-hero="subtitle"
             className="text-sm sm:text-base leading-relaxed text-neutral-200/90 font-normal tracking-[-0.01em]"
@@ -161,7 +161,7 @@ export function HeroSection() {
             </button>
           </div>
         </div>
-
+        
         <div ref={titleWrapRef} className="w-full min-w-0 overflow-hidden">
           <h1
             ref={titleRef}
