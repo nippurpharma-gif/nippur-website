@@ -258,6 +258,7 @@ export function buildJobMetadata(job: JobPublic, locale: Locale): Metadata {
     (isAr ? job.descriptionAr || job.descriptionEn : job.descriptionEn || job.descriptionAr) ||
     copy[locale].description;
   const url = `${site}/careers/${job.slug}`;
+  const ogImage = `${site}/images/factory-building.png`;
   const department = isAr
     ? job.departmentAr || job.departmentEn
     : job.departmentEn || job.departmentAr;
@@ -281,11 +282,13 @@ export function buildJobMetadata(job: JobPublic, locale: Locale): Metadata {
       type: 'website',
       siteName: 'NIPPUR Pharma',
       locale: isAr ? 'ar_IQ' : 'en_US',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description: description.slice(0, 160),
+      images: [ogImage],
     },
   };
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Calendar, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SurfaceCard } from '@/components/ui/surface-card';
+import { PageShareButton } from '@/components/share/PageShareButton';
 import type { NewsArticlePublic } from '@/lib/news';
 
 function formatDate(dateStr: string, locale: 'en' | 'ar'): string {
@@ -55,6 +56,13 @@ export function NewsArticleView({
             <Calendar className="size-3.5" />
             {formatDate(article.date || article.createdAt, locale)}
           </span>
+          <PageShareButton
+            title={title}
+            text={excerpt}
+            successEn="Article link copied"
+            successAr="تم نسخ رابط الخبر"
+            className="ms-auto"
+          />
         </div>
 
         <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[var(--ink)] tracking-tight leading-tight">

@@ -6,6 +6,7 @@ import { MapPin, Clock, ArrowLeft, ArrowRight, Briefcase, GraduationCap, ListChe
 import { useAppStore } from '@/store';
 import { SurfaceCard } from '@/components/ui/surface-card';
 import { Button } from '@/components/ui/button';
+import { PageShareButton } from '@/components/share/PageShareButton';
 import { ApplicationFormDialog } from '@/components/sections/ApplicationFormDialog';
 import type { JobPublic } from '@/lib/jobs';
 
@@ -100,6 +101,13 @@ export function JobDetailView({
                 {job.experienceLevel}
               </span>
             ) : null}
+            <PageShareButton
+              title={title}
+              text={overviewParagraphs[0] || title}
+              successEn="Job link copied"
+              successAr="تم نسخ رابط الوظيفة"
+              className="ms-auto"
+            />
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-[var(--ink)] tracking-tight leading-tight max-w-3xl">

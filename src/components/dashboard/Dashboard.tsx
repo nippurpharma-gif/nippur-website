@@ -24,6 +24,7 @@ import {
   Package,
   Shield,
   PanelsTopLeft,
+  Share2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -63,6 +64,7 @@ import { ProductsTab } from '@/components/dashboard/ProductsTab';
 import { UsersTab } from '@/components/dashboard/UsersTab';
 import { ProductionStatsEditor } from '@/components/dashboard/ProductionStatsEditor';
 import { HomepageSectionsEditor } from '@/components/dashboard/HomepageSectionsEditor';
+import { NewsShareDialog, JobShareDialog } from '@/components/share/SocialShareDialog';
 import {
   DEFAULT_PRODUCTION_STATS,
   parseProductionStats,
@@ -580,6 +582,7 @@ function NewsTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsArticle | null>(null);
+  const [sharingNews, setSharingNews] = useState<NewsArticle | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<NewsFormData>(emptyNewsForm);
 
@@ -742,7 +745,16 @@ function NewsTab() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-brand-600"
+                            title={t('Share', 'مشاركة')}
+                            onClick={() => setSharingNews(article)}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -980,6 +992,14 @@ function NewsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <NewsShareDialog
+        article={sharingNews}
+        open={sharingNews !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setSharingNews(null);
+        }}
+      />
     </div>
   );
 }
@@ -1461,6 +1481,7 @@ function JobsTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPosition | null>(null);
+  const [sharingJob, setSharingJob] = useState<JobPosition | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<JobFormData>(emptyJobForm);
 
@@ -1627,7 +1648,16 @@ function JobsTab() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-brand-600"
+                            title={t('Share', 'مشاركة')}
+                            onClick={() => setSharingJob(job)}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-brand-600" onClick={() => openEditDialog(job)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -1902,6 +1932,14 @@ function JobsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <JobShareDialog
+        job={sharingJob}
+        open={sharingJob !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setSharingJob(null);
+        }}
+      />
     </motion.div>
   );
 }
