@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { gsap, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL, scrubParallax } from '@/lib/gsap-site';
@@ -10,8 +11,6 @@ export function CTASection() {
   const { t } = useAppStore();
   const rootRef = useRef<HTMLElement>(null);
 
-  // Do not recreate ScrollTriggers on locale change — dir flip + mass revert
-  // was crashing GSAP ("Cannot read properties of undefined (reading 'end')").
   useGSAP(
     () => {
       const root = rootRef.current;
@@ -45,13 +44,17 @@ export function CTASection() {
       className="relative overflow-hidden min-h-[70svh] lg:min-h-[80svh] flex items-center justify-center"
     >
       <div className="absolute inset-0 z-0">
-        <div
-          data-cta="bg"
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat will-change-transform"
-          style={{ backgroundImage: "url('/images/factory-building.png')" }}
-          role="img"
-          aria-hidden
-        />
+        <div data-cta="bg" className="absolute inset-0 will-change-transform">
+          <Image
+            src="/images/factory-building.webp"
+            alt=""
+            fill
+            sizes="100vw"
+            quality={65}
+            loading="lazy"
+            className="object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-black/55" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/35 to-black/70" />
       </div>

@@ -203,11 +203,12 @@ export function QualitySection() {
                       <div className="relative h-full min-h-[200px] rounded-2xl overflow-hidden border border-white/10">
                         <div className="absolute inset-0 bg-gradient-to-t from-brand-950/70 via-transparent to-transparent z-10 pointer-events-none" />
                         <Image
-                          src={standard.image || '/images/quality-control.png'}
+                          src={standard.image || '/images/quality-control.webp'}
                           alt={standard.title}
                           fill
                           sizes="(max-width: 768px) 100vw, 28vw"
                           loading="lazy"
+                          quality={70}
                           className="object-cover"
                         />
                       </div>

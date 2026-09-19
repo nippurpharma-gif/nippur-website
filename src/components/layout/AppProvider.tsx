@@ -1,21 +1,23 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { SessionProvider } from 'next-auth/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAppStore, type SiteSettings } from '@/store';
 import type { Locale } from '@/lib/i18n/translations';
 import { persistLocale } from '@/lib/locale';
 
-export function AppProvider({
-  children,
-  initialLocale,
-  initialSettings,
-}: {
-  children: React.ReactNode;
-  initialLocale?: Locale;
-  initialSettings?: SiteSettings | null;
-}) {
+function needsAppDataProviders(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/api/auth')
+  );
+}
+
+function AuthQueryProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -27,7 +29,28 @@ export function AppProvider({
         },
       }),
   );
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SessionProvider refetchOnWindowFocus={false} refetchInterval={0}>
+        {children}
+      </SessionProvider>
+    </QueryClientProvider>
+  );
+}
+
+export function AppProvider({
+  children,
+  initialLocale,
+  initialSettings,
+}: {
+  children: React.ReactNode;
+  initialLocale?: Locale;
+  initialSettings?: SiteSettings | null;
+}) {
+  const pathname = usePathname();
   const { locale, setLocale, setSiteSettings, setSettingsFetched } = useAppStore();
+  const withDataProviders = needsAppDataProviders(pathname);
 
   useLayoutEffect(() => {
     if (initialLocale) {
@@ -47,25 +70,11 @@ export function AppProvider({
   useEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
-
-    let nested = 0;
-    const outer = requestAnimationFrame(() => {
-      nested = requestAnimationFrame(() => {
-        void import('@/lib/gsap-site').then(({ ScrollTrigger }) => {
-          ScrollTrigger.refresh();
-        });
-      });
-    });
-
-    return () => {
-      cancelAnimationFrame(outer);
-      cancelAnimationFrame(nested);
-    };
   }, [locale]);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <SessionProvider>{children}</SessionProvider>
-    </QueryClientProvider>
-  );
+  if (withDataProviders) {
+    return <AuthQueryProviders>{children}</AuthQueryProviders>;
+  }
+
+  return <>{children}</>;
 }

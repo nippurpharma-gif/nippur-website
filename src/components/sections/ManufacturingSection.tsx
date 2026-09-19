@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import Image from 'next/image';
 import { Pill, Shield, FlaskConical, Settings, Factory } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { SectionWrapper, FadeIn, StaggerContainer, StaggerItem } from './SectionWrapper';
@@ -61,11 +62,14 @@ export function ManufacturingSection() {
               media
               ref={imageWrapRef}
             >
-              <img
-                src="/images/manufacturing-line.png"
+              <Image
+                src="/images/manufacturing-line.webp"
                 alt="NIPPUR Pharma Manufacturing Line"
+                width={800}
+                height={500}
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                quality={70}
                 loading="lazy"
-                decoding="async"
                 className="w-full h-[300px] lg:h-[400px] object-cover will-change-transform"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[var(--ink)]/75 via-transparent to-transparent" />

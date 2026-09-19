@@ -202,7 +202,7 @@ export const translations = {
           title: 'GMP Compliance',
           desc: 'Full compliance with WHO and ICH GMP guidelines in all manufacturing operations, ensuring maximum safety, quality, and efficacy across every batch.',
           tags: ['WHO GMP Guidelines', 'ICH Q7-Q12 Standards', 'Iraqi FDA Certified'],
-          image: '/images/quality-control.png',
+          image: '/images/quality-control.webp',
           icon: 'shield-check',
         },
         {
@@ -210,7 +210,7 @@ export const translations = {
           title: 'Quality Control Laboratory',
           desc: 'State-of-the-art QC laboratory equipped with HPLC, GC, UV-Vis spectrophotometry, and automated dissolution testing systems for material and release analysis.',
           tags: ['HPLC & GC Testing', 'Spectrophotometry', 'Dissolution Systems'],
-          image: '/images/research-lab.png',
+          image: '/images/research-lab.webp',
           icon: 'test',
         },
         {
@@ -218,7 +218,7 @@ export const translations = {
           title: 'GLP Analytical Laboratory',
           desc: 'Good Laboratory Practice certified testing facilities providing reliable, fully traceable analytical results and stringent stability testing throughout the product lifecycle.',
           tags: ['Method Validation', 'Analytical Traceability', 'ISO Standards'],
-          image: '/images/manufacturing-line.png',
+          image: '/images/manufacturing-line.webp',
           icon: 'flask',
         },
         {
@@ -226,7 +226,7 @@ export const translations = {
           title: 'Validation & Environmental Safety',
           desc: 'Comprehensive validation programs covering HVAC cleanroom systems, manufacturing equipment, process qualification, and automated CIP/SIP protocols.',
           tags: ['Cleanroom ISO 5-8', 'Process Validation', 'Zero-Contamination'],
-          image: '/images/factory-real.jpeg',
+          image: '/images/factory-real.webp',
           icon: 'check-circle',
         },
       ],
@@ -610,7 +610,7 @@ export const translations = {
           title: 'الامتثال لممارسات التصنيع الجيد (GMP)',
           desc: 'الامتثال الكامل لتعليمات منظمة الصحة العالمية وإرشادات ICH GMP في كافة عمليات التصنيع لضمان أعلى معايير السلامة والجودة والفاعلية الدوائية.',
           tags: ['إرشادات WHO GMP', 'معايير ICH Q7-Q12', 'اعتماد المؤسسة العامة للغذاء والدواء'],
-          image: '/images/quality-control.png',
+          image: '/images/quality-control.webp',
           icon: 'shield-check',
         },
         {
@@ -618,7 +618,7 @@ export const translations = {
           title: 'مختبر رقابة الجودة (QC Lab)',
           desc: 'مختبر رقابة جودة متطور مجهز بأحدث أجهزة الكروماتوغرافيا (HPLC, GC) والمطيافية الضوئية وأنظمة التفكك والذوبان الآلية لفحص المواد والمنتجات النهائية.',
           tags: ['تحليل HPLC و GC', 'مطيافية الضوء UV-Vis', 'أنظمة اختبار الذوبان'],
-          image: '/images/research-lab.png',
+          image: '/images/research-lab.webp',
           icon: 'test',
         },
         {
@@ -626,7 +626,7 @@ export const translations = {
           title: 'مختبر الممارسات المختبرية الجيدة (GLP)',
           desc: 'مرافق فحص واختبار معتمدة وفق معايير GLP توفر نتائج تحليلية موثوقة وموثقة مع برامج دراسات ثبات الدواء على مدار فترة الصلاحية.',
           tags: ['التحقق من الطرق التحليلية', 'الموثوقية والتوثيق', 'معايير الجودة الدولية ISO'],
-          image: '/images/manufacturing-line.png',
+          image: '/images/manufacturing-line.webp',
           icon: 'flask',
         },
         {
@@ -634,7 +634,7 @@ export const translations = {
           title: 'التثبت والسلامة البيئية',
           desc: 'برامج تثبت لمعايرة خطوط الإنتاج وأنظمة الغرف النظيفة (HVAC) وبروتوكولات التعقيم والتنظيف الآلي للحد التام من أي تلوث متقاطع.',
           tags: ['غرف نظيفة ISO 5-8', 'التثبت من العمليات', 'بروتوكولات منع التلوث'],
-          image: '/images/factory-real.jpeg',
+          image: '/images/factory-real.webp',
           icon: 'check-circle',
         },
       ],

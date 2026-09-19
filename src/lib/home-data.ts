@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { db } from '@/lib/db';
 import type { SiteSettings } from '@/store';
 import { parseProductionStats } from '@/lib/production-stats';
@@ -111,7 +112,7 @@ function toSettings(row: {
   };
 }
 
-export const getHomePageData = cache(async (): Promise<HomePageData> => {
+async function fetchHomePageData(): Promise<HomePageData> {
   try {
     const [settingsRow, products, jobs, news, partners] = await Promise.all([
       db.siteSettings.findUnique({ where: { id: 1 } }),
@@ -157,4 +158,11 @@ export const getHomePageData = cache(async (): Promise<HomePageData> => {
       partners: [],
     };
   }
+}
+
+const getCachedHomePageData = unstable_cache(fetchHomePageData, ['home-page-data'], {
+  revalidate: 120,
+  tags: ['home'],
 });
+
+export const getHomePageData = cache(async (): Promise<HomePageData> => getCachedHomePageData());

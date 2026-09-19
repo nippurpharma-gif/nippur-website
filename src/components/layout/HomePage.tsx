@@ -1,23 +1,10 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { useActiveSection } from '@/components/sections/SectionWrapper';
 import { HeroSection } from '@/components/sections/HeroSection';
-import { AboutSection } from '@/components/sections/AboutSection';
-import { StatsSection } from '@/components/sections/StatsSection';
-import { ManufacturingSection } from '@/components/sections/ManufacturingSection';
-import { ProductsSection } from '@/components/sections/ProductsSection';
-import { ResearchSection } from '@/components/sections/ResearchSection';
-import { QualitySection } from '@/components/sections/QualitySection';
-import { SustainabilitySection } from '@/components/sections/SustainabilitySection';
-import { CareersSection } from '@/components/sections/CareersSection';
-import { NewsSection } from '@/components/sections/NewsSection';
-import { PartnersSection } from '@/components/sections/PartnersSection';
-import { ContactSection } from '@/components/sections/ContactSection';
-import { CTASection } from '@/components/sections/CTASection';
-import { ScrollTrigger } from '@/lib/gsap-site';
 import { scrollToHashTarget } from '@/lib/scroll-to-section';
 import { useAppStore } from '@/store';
 import type { HomePageData } from '@/lib/home-data';
@@ -26,6 +13,59 @@ import {
   parseHomepageSections,
   type ManagedSectionKey,
 } from '@/lib/homepage-sections';
+
+const StatsSection = dynamic(
+  () => import('@/components/sections/StatsSection').then((m) => m.StatsSection),
+  { ssr: true },
+);
+const AboutSection = dynamic(
+  () => import('@/components/sections/AboutSection').then((m) => m.AboutSection),
+  { ssr: true },
+);
+const ManufacturingSection = dynamic(
+  () => import('@/components/sections/ManufacturingSection').then((m) => m.ManufacturingSection),
+  { ssr: true },
+);
+const ProductsSection = dynamic(
+  () => import('@/components/sections/ProductsSection').then((m) => m.ProductsSection),
+  { ssr: true },
+);
+const ResearchSection = dynamic(
+  () => import('@/components/sections/ResearchSection').then((m) => m.ResearchSection),
+  { ssr: true },
+);
+const QualitySection = dynamic(
+  () => import('@/components/sections/QualitySection').then((m) => m.QualitySection),
+  { ssr: true },
+);
+const SustainabilitySection = dynamic(
+  () => import('@/components/sections/SustainabilitySection').then((m) => m.SustainabilitySection),
+  { ssr: true },
+);
+const CareersSection = dynamic(
+  () => import('@/components/sections/CareersSection').then((m) => m.CareersSection),
+  { ssr: true },
+);
+const NewsSection = dynamic(
+  () => import('@/components/sections/NewsSection').then((m) => m.NewsSection),
+  { ssr: true },
+);
+const PartnersSection = dynamic(
+  () => import('@/components/sections/PartnersSection').then((m) => m.PartnersSection),
+  { ssr: true },
+);
+const ContactSection = dynamic(
+  () => import('@/components/sections/ContactSection').then((m) => m.ContactSection),
+  { ssr: true },
+);
+const CTASection = dynamic(
+  () => import('@/components/sections/CTASection').then((m) => m.CTASection),
+  { ssr: true },
+);
+const Footer = dynamic(
+  () => import('@/components/layout/Footer').then((m) => m.Footer),
+  { ssr: true },
+);
 
 export function HomePage({ data }: { data: HomePageData }) {
   useActiveSection();
@@ -41,15 +81,18 @@ export function HomePage({ data }: { data: HomePageData }) {
   }, [data.settings, setSiteSettings, setSettingsFetched]);
 
   useEffect(() => {
-    void document.fonts.ready.then(() => ScrollTrigger.refresh());
-  }, [locale]);
-
-  useEffect(() => {
     if (window.location.hash) {
       const timer = window.setTimeout(() => scrollToHashTarget(), 50);
       return () => window.clearTimeout(timer);
     }
   }, []);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void import('@/lib/gsap-site').then(({ ScrollTrigger }) => ScrollTrigger.refresh());
+    }, 400);
+    return () => window.clearTimeout(id);
+  }, [locale]);
 
   const managedOrder = useMemo(() => {
     const sections = parseHomepageSections(data.settings?.homepageSections ?? DEFAULT_HOMEPAGE_SECTIONS);
@@ -72,7 +115,6 @@ export function HomePage({ data }: { data: HomePageData }) {
       <Header />
       <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
         <HeroSection />
-        {/* isolate + solid bg keeps sticky hero (z-0) strictly underneath while scrolling */}
         <div className="relative z-10 isolate bg-background shadow-[0_-1px_0_rgba(10,37,68,0.04)]">
           <StatsSection />
           <AboutSection />

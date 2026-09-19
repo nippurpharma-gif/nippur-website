@@ -1,10 +1,10 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
+import Image from 'next/image';
 import { ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useActiveSection } from './SectionWrapper';
-import { createHeroGsapTimeline, createHeroScrollParallax, useGSAP } from '@/lib/gsap-site';
 import { scrollToSection } from '@/lib/scroll-to-section';
 
 /**
@@ -77,29 +77,46 @@ export function HeroSection() {
     };
   }, [locale]);
 
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      if (!root) return;
+  // Defer GSAP until after first paint so LCP image/fonts win the network
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
 
-      const start = () => {
-        const wrap = titleWrapRef.current;
-        const title = titleRef.current;
-        if (wrap && title) fitTitleToWidth(title, wrap);
-        createHeroGsapTimeline(root);
-        createHeroScrollParallax(root);
-      };
+    let cancelled = false;
+    let revert: (() => void) | undefined;
 
-      if (document.fonts?.status === 'loaded') {
-        start();
-      } else {
-        void document.fonts.ready.then(start);
-      }
-    },
-    { scope: rootRef },
-  );
+    const boot = () => {
+      void import('@/lib/gsap-site').then(
+        ({ gsap, createHeroGsapTimeline, createHeroScrollParallax, prefersReducedMotion }) => {
+          if (cancelled || !rootRef.current) return;
+          const ctx = gsap.context(() => {
+            const wrap = titleWrapRef.current;
+            const title = titleRef.current;
+            if (wrap && title) fitTitleToWidth(title, wrap);
+            if (!prefersReducedMotion()) {
+              createHeroGsapTimeline(rootRef.current!);
+              createHeroScrollParallax(rootRef.current!);
+            }
+          }, rootRef);
+          revert = () => ctx.revert();
+        },
+      );
+    };
+
+    const idleId = window.setTimeout(boot, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(idleId);
+      revert?.();
+    };
+  }, []);
 
   const brandTitle = locale === 'ar' ? 'نيـبـور فـارمـا' : 'Nippur Pharma';
+  const heroAlt =
+    locale === 'ar'
+      ? 'منشأة نيبور فارما للتصنيع الدوائي'
+      : 'NIPPUR Pharma manufacturing facility';
 
   return (
     <section
@@ -107,24 +124,23 @@ export function HeroSection() {
       ref={rootRef}
       className="sticky top-0 z-0 min-h-[100svh] overflow-hidden bg-neutral-950"
     >
-      {/* Media layer is isolated so GSAP transforms never lift the sticky section above page content */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
-        <div
-          data-hero="bg"
-          className="absolute inset-[-8%] bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/images/factory-real.jpeg')" }}
-          role="img"
-          aria-label={
-            locale === 'ar'
-              ? 'منشأة نيبور فارما للتصنيع الدوائي'
-              : 'NIPPUR Pharma manufacturing facility'
-          }
-        />
+        <div data-hero="bg" className="absolute inset-[-8%]">
+          <Image
+            src="/images/factory-real.webp"
+            alt={heroAlt}
+            fill
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            quality={70}
+            className="object-cover"
+          />
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/92" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.45),transparent_70%)]" />
       </div>
 
-      {/* Bottom-anchored stack: copy sits just above the brand title */}
       <div className="absolute inset-x-0 bottom-0 z-[1] site-container pb-5 sm:pb-8 lg:pb-10 pt-28">
         <div className="max-w-[18rem] sm:max-w-sm lg:max-w-md space-y-3 mb-3 sm:mb-4 lg:mb-5">
           <p

@@ -26,7 +26,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 const cairo = Cairo({
   variable: '--font-cairo',
   subsets: ['arabic', 'latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700'],
   display: 'swap',
   preload: true,
 });
@@ -49,7 +49,13 @@ export default async function RootLayout({
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <head>
-        <link rel="preload" as="image" href="/images/factory-real.jpeg" fetchPriority="high" />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/factory-real.webp"
+          type="image/webp"
+          fetchPriority="high"
+        />
       </head>
       <body
         className={`${inter.variable} ${ibmPlexMono.variable} ${cairo.variable} font-sans antialiased bg-background text-foreground`}

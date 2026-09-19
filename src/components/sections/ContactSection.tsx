@@ -10,13 +10,6 @@ import { SurfaceCard } from '@/components/ui/surface-card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 
 export function ContactSection() {
@@ -157,18 +150,21 @@ export function ContactSection() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="inquiry">{t.contact.form.inquiry}</Label>
-                <Select value={formData.inquiry} onValueChange={(v) => handleChange('inquiry', v)}>
-                  <SelectTrigger id="inquiry">
-                    <SelectValue placeholder={t.contact.form.inquiry} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {t.contact.form.inquiryOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <select
+                  id="inquiry"
+                  value={formData.inquiry}
+                  onChange={(e) => handleChange('inquiry', e.target.value)}
+                  className="border-input bg-transparent flex h-9 w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                >
+                  <option value="" disabled>
+                    {t.contact.form.inquiry}
+                  </option>
+                  {t.contact.form.inquiryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

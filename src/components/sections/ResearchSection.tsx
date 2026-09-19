@@ -42,12 +42,13 @@ export function ResearchSection() {
           <SurfaceCard media ref={mediaRef} className="overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-tr from-[var(--ink)]/40 to-transparent z-10" />
             <Image
-              src="/images/research-lab.png"
+              src="/images/research-lab.webp"
               alt="NIPPUR Pharma Research Laboratory"
               width={800}
               height={600}
               loading="lazy"
               sizes="(max-width: 1024px) 100vw, 50vw"
+              quality={70}
               className="w-full h-auto object-cover will-change-transform"
             />
           </SurfaceCard>
