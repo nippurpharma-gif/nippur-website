@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import { Upload, Loader2, FileText, X } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Upload, Loader2, FileText, X, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAppStore } from '@/store';
 import {
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ApplicationFormDialogProps {
   position: string | null;
@@ -46,7 +47,9 @@ export function ApplicationFormDialog({
   const [coverLetter, setCoverLetter] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cvSectionRef = useRef<HTMLDivElement>(null);
 
   const labels = locale === 'ar'
     ? {
@@ -59,11 +62,13 @@ export function ApplicationFormDialog({
         coverLetter: 'رسالة التعريف',
         cv: 'السيرة الذاتية (CV)',
         cvHint: 'PDF أو DOC، بحد أقصى 5 ميجابايت',
+        cvRequired: 'السيرة الذاتية مطلوبة. يرجى رفع ملف PDF أو DOC.',
         submit: 'تقديم الطلب',
         submitting: 'جارِ التقديم...',
         success: 'تم التقديم بنجاح وسيتم التواصل معك من قبل الموارد البشرية قريباً',
         error: 'حدث خطأ. يرجى المحاولة مرة أخرى.',
         chooseFile: 'اختر ملف',
+        requiredFields: 'يرجى ملء الحقول المطلوبة.',
       }
     : {
         title: 'Apply for Position',
@@ -75,15 +80,23 @@ export function ApplicationFormDialog({
         coverLetter: 'Cover Letter',
         cv: 'Curriculum Vitae (CV)',
         cvHint: 'PDF or DOC, max 5MB',
+        cvRequired: 'A CV is required. Please upload a PDF or DOC file.',
         submit: 'Submit Application',
         submitting: 'Submitting...',
         success:
           'Application submitted successfully. Human Resources will contact you soon.',
         error: 'Something went wrong. Please try again.',
         chooseFile: 'Choose File',
+        requiredFields: 'Please fill in all required fields.',
       };
 
   const isRtl = locale === 'ar';
+
+  useEffect(() => {
+    if (!open) {
+      setCvError(null);
+    }
+  }, [open]);
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,34 +109,38 @@ export function ApplicationFormDialog({
 
       const ext = '.' + file.name.split('.').pop()?.toLowerCase();
       if (!ACCEPTED_TYPES.includes(ext)) {
-        toast.error(
+        const msg =
           locale === 'ar'
             ? 'نوع الملف غير مدعوم. يرجى رفع PDF أو DOC.'
-            : 'Invalid file type. Please upload PDF or DOC.'
-        );
+            : 'Invalid file type. Please upload PDF or DOC.';
+        toast.error(msg);
+        setCvError(msg);
         if (fileInputRef.current) fileInputRef.current.value = '';
         setSelectedFile(null);
         return;
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(
+        const msg =
           locale === 'ar'
             ? 'حجم الملف يتجاوز 5 ميجابايت.'
-            : 'File size exceeds 5MB limit.'
-        );
+            : 'File size exceeds 5MB limit.';
+        toast.error(msg);
+        setCvError(msg);
         if (fileInputRef.current) fileInputRef.current.value = '';
         setSelectedFile(null);
         return;
       }
 
       setSelectedFile(file);
+      setCvError(null);
     },
     [locale]
   );
 
   const removeFile = useCallback(() => {
     setSelectedFile(null);
+    setCvError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -133,6 +150,7 @@ export function ApplicationFormDialog({
     setPhone('');
     setCoverLetter('');
     setSelectedFile(null);
+    setCvError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -141,14 +159,18 @@ export function ApplicationFormDialog({
       e.preventDefault();
 
       if (!name.trim() || !email.trim()) {
-        toast.error(
-          locale === 'ar'
-            ? 'يرجى ملء الحقول المطلوبة.'
-            : 'Please fill in all required fields.'
-        );
+        toast.error(labels.requiredFields);
         return;
       }
 
+      if (!selectedFile) {
+        setCvError(labels.cvRequired);
+        toast.error(labels.cvRequired, { duration: 5000 });
+        cvSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      setCvError(null);
       setSubmitting(true);
 
       try {
@@ -159,7 +181,7 @@ export function ApplicationFormDialog({
         if (position) formData.append('position', position);
         if (department) formData.append('department', department);
         if (coverLetter.trim()) formData.append('coverLetter', coverLetter.trim());
-        if (selectedFile) formData.append('cv', selectedFile);
+        formData.append('cv', selectedFile);
 
         const res = await fetch('/api/applications', {
           method: 'POST',
@@ -177,7 +199,18 @@ export function ApplicationFormDialog({
         setSubmitting(false);
       }
     },
-    [name, email, phone, position, department, coverLetter, selectedFile, labels, onOpenChange, resetForm]
+    [
+      name,
+      email,
+      phone,
+      position,
+      department,
+      coverLetter,
+      selectedFile,
+      labels,
+      onOpenChange,
+      resetForm,
+    ]
   );
 
   return (
@@ -200,7 +233,7 @@ export function ApplicationFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 pt-2">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 pt-2">
           {/* Full Name */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="app-name">
@@ -290,9 +323,11 @@ export function ApplicationFormDialog({
             />
           </div>
 
-          {/* CV Upload */}
-          <div className="flex flex-col gap-1.5">
-            <Label>{labels.cv}</Label>
+          {/* CV Upload — required; never use HTML required on a hidden input (browser blocks silently) */}
+          <div ref={cvSectionRef} className="flex flex-col gap-1.5">
+            <Label htmlFor="app-cv">
+              {labels.cv} <span className="text-red-500">*</span>
+            </Label>
 
             {selectedFile ? (
               <div className="flex items-center gap-3 rounded-md border border-brand-200 bg-brand-50/50 p-3">
@@ -318,15 +353,36 @@ export function ApplicationFormDialog({
             ) : (
               <label
                 htmlFor="app-cv"
-                className={`flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-brand-200 bg-brand-50/30 p-6 cursor-pointer transition-colors hover:border-brand-400 hover:bg-brand-50/60 ${submitting ? 'pointer-events-none opacity-50' : ''}`}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed p-6 cursor-pointer transition-colors',
+                  cvError
+                    ? 'border-red-400 bg-red-50/70 hover:border-red-500'
+                    : 'border-brand-200 bg-brand-50/30 hover:border-brand-400 hover:bg-brand-50/60',
+                  submitting && 'pointer-events-none opacity-50',
+                )}
               >
-                <Upload className="size-8 text-brand-500" />
-                <span className="text-sm font-medium text-brand-700">
+                <Upload className={cn('size-8', cvError ? 'text-red-500' : 'text-brand-500')} />
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    cvError ? 'text-red-700' : 'text-brand-700',
+                  )}
+                >
                   {labels.chooseFile}
                 </span>
                 <span className="text-xs text-muted-foreground">{labels.cvHint}</span>
               </label>
             )}
+
+            {cvError ? (
+              <p
+                role="alert"
+                className="flex items-start gap-1.5 text-sm text-red-600 font-medium"
+              >
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>{cvError}</span>
+              </p>
+            ) : null}
 
             <input
               ref={fileInputRef}
@@ -334,8 +390,10 @@ export function ApplicationFormDialog({
               type="file"
               accept=".pdf,.doc,.docx"
               onChange={handleFileChange}
-              className="hidden"
+              className="sr-only"
               disabled={submitting}
+              aria-required="true"
+              aria-invalid={cvError ? true : undefined}
             />
           </div>
 

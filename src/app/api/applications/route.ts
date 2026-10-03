@@ -102,33 +102,35 @@ export async function POST(request: NextRequest) {
     let cvFileName = '';
     let cvFilePath = '';
 
-    if (cvFile && cvFile.size > 0) {
-      if (cvFile.size > MAX_CV_SIZE) {
-        return NextResponse.json({ error: 'CV too large (max 5MB)' }, { status: 400 });
-      }
-
-      const ext = path.extname(cvFile.name).toLowerCase();
-      if (!ALLOWED_CV_EXT.has(ext)) {
-        return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
-      }
-
-      if (cvFile.type && !ALLOWED_CV_MIME.has(cvFile.type)) {
-        return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
-      }
-
-      const bytes = Buffer.from(await cvFile.arrayBuffer());
-      const sniffed = sniffCvMime(bytes, ext);
-      if (!sniffed || !ALLOWED_CV_MIME.has(sniffed)) {
-        return NextResponse.json({ error: 'CV file content is invalid' }, { status: 400 });
-      }
-
-      const uploadDir = path.join(process.cwd(), 'uploads');
-      await mkdir(uploadDir, { recursive: true });
-      const safeBase = cvFile.name.replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 80);
-      cvFileName = `${Date.now()}-${safeBase.endsWith(ext) ? safeBase : `${safeBase}${ext}`}`;
-      cvFilePath = path.join(uploadDir, cvFileName);
-      await writeFile(cvFilePath, bytes);
+    if (!cvFile || cvFile.size <= 0) {
+      return NextResponse.json({ error: 'CV is required' }, { status: 400 });
     }
+
+    if (cvFile.size > MAX_CV_SIZE) {
+      return NextResponse.json({ error: 'CV too large (max 5MB)' }, { status: 400 });
+    }
+
+    const ext = path.extname(cvFile.name).toLowerCase();
+    if (!ALLOWED_CV_EXT.has(ext)) {
+      return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
+    }
+
+    if (cvFile.type && !ALLOWED_CV_MIME.has(cvFile.type)) {
+      return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
+    }
+
+    const bytes = Buffer.from(await cvFile.arrayBuffer());
+    const sniffed = sniffCvMime(bytes, ext);
+    if (!sniffed || !ALLOWED_CV_MIME.has(sniffed)) {
+      return NextResponse.json({ error: 'CV file content is invalid' }, { status: 400 });
+    }
+
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    await mkdir(uploadDir, { recursive: true });
+    const safeBase = cvFile.name.replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 80);
+    cvFileName = `${Date.now()}-${safeBase.endsWith(ext) ? safeBase : `${safeBase}${ext}`}`;
+    cvFilePath = path.join(uploadDir, cvFileName);
+    await writeFile(cvFilePath, bytes);
 
     const { fullName, email, phone, position, department, coverLetter } = parsed.data;
 

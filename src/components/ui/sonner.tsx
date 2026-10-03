@@ -11,9 +11,10 @@ export function SonnerToaster(props: ToasterProps) {
       richColors
       closeButton
       dir="auto"
+      className="toaster group !z-[99999]"
       toastOptions={{
         classNames: {
-          toast: 'font-sans text-sm',
+          toast: 'font-sans text-sm !z-[99999]',
         },
       }}
       style={
@@ -21,7 +22,6 @@ export function SonnerToaster(props: ToasterProps) {
           '--normal-bg': 'var(--popover)',
           '--normal-text': 'var(--popover-foreground)',
           '--normal-border': 'var(--border)',
-          zIndex: 99999,
         } as React.CSSProperties
       }
       {...props}

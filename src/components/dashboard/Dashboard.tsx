@@ -1206,7 +1206,7 @@ function ApplicationsTab() {
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="z-[100]">
                     {APP_STATUSES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s === 'pending' && t('Pending', 'قيد الانتظار')}
