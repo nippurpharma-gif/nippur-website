@@ -29,7 +29,7 @@ import {
 import { toast } from 'sonner';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'motion/react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -282,25 +282,40 @@ function formatDate(dateStr: string) {
 // ── Sidebar Navigation Config ──────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { id: 'overview', icon: LayoutDashboard, labelEn: 'Overview', labelAr: 'نظرة عامة' },
-  { id: 'sections', icon: PanelsTopLeft, labelEn: 'Page Sections', labelAr: 'أقسام الصفحة' },
-  { id: 'products', icon: Package, labelEn: 'Products', labelAr: 'المنتجات' },
-  { id: 'news', icon: Newspaper, labelEn: 'News Management', labelAr: 'إدارة الأخبار' },
-  { id: 'applications', icon: Users, labelEn: 'Applications', labelAr: 'الطلبات' },
-  { id: 'partners', icon: Handshake, labelEn: 'Partners', labelAr: 'الشركاء' },
-  { id: 'jobs', icon: Briefcase, labelEn: 'Job Positions', labelAr: 'الوظائف' },
-  { id: 'users', icon: Shield, labelEn: 'Users & Login', labelAr: 'المستخدمون وتسجيل الدخول' },
-  { id: 'settings', icon: Settings, labelEn: 'Site Settings', labelAr: 'إعدادات الموقع' },
+  { id: 'overview', icon: LayoutDashboard, labelEn: 'Overview', labelAr: 'نظرة عامة', roles: ['admin', 'editor'] as const },
+  { id: 'sections', icon: PanelsTopLeft, labelEn: 'Page Sections', labelAr: 'أقسام الصفحة', roles: ['admin'] as const },
+  { id: 'products', icon: Package, labelEn: 'Products', labelAr: 'المنتجات', roles: ['admin', 'editor'] as const },
+  { id: 'news', icon: Newspaper, labelEn: 'News Management', labelAr: 'إدارة الأخبار', roles: ['admin', 'editor'] as const },
+  { id: 'applications', icon: Users, labelEn: 'Applications', labelAr: 'الطلبات', roles: ['admin'] as const },
+  { id: 'partners', icon: Handshake, labelEn: 'Partners', labelAr: 'الشركاء', roles: ['admin', 'editor'] as const },
+  { id: 'jobs', icon: Briefcase, labelEn: 'Job Positions', labelAr: 'الوظائف', roles: ['admin', 'editor'] as const },
+  { id: 'users', icon: Shield, labelEn: 'Users & Login', labelAr: 'المستخدمون وتسجيل الدخول', roles: ['admin'] as const },
+  { id: 'settings', icon: Settings, labelEn: 'Site Settings', labelAr: 'إعدادات الموقع', roles: ['admin'] as const },
 ];
 
 // ── Dashboard Component ────────────────────────────────────────────────
 
 export function Dashboard() {
   const { dashboardTab, setDashboardTab, locale } = useAppStore();
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? 'editor';
   const isAr = locale === 'ar';
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const activeTab = dashboardTab || 'overview';
+  const visibleNav = NAV_ITEMS.filter((item) =>
+    (item.roles as readonly string[]).includes(role),
+  );
+  const canAccessTab = (id: string) =>
+    NAV_ITEMS.some(
+      (item) => item.id === id && (item.roles as readonly string[]).includes(role),
+    );
+  const activeTab = dashboardTab && canAccessTab(dashboardTab) ? dashboardTab : 'overview';
+
+  useEffect(() => {
+    if (dashboardTab && !canAccessTab(dashboardTab)) {
+      setDashboardTab('overview');
+    }
+  }, [dashboardTab, role, setDashboardTab]);
 
   const t = (en: string, ar: string) => (isAr ? ar : en);
 
@@ -344,7 +359,7 @@ export function Dashboard() {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {NAV_ITEMS.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
@@ -435,6 +450,8 @@ export function Dashboard() {
 
 function OverviewTab() {
   const { locale } = useAppStore();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === 'admin';
   const isAr = locale === 'ar';
   const t = (en: string, ar: string) => (isAr ? ar : en);
 
@@ -445,6 +462,7 @@ function OverviewTab() {
 
   const { data: applications = [], isLoading: appsLoading } = useQuery<Application[]>({
     queryKey: ['applications'],
+    enabled: isAdmin,
     queryFn: async () =>
       asList<Application>(await fetch(`${API_BASE}/applications`).then((r) => r.json())),
   });
@@ -459,12 +477,16 @@ function OverviewTab() {
       icon: Newspaper,
       color: 'bg-brand-50 text-brand-600',
     },
-    {
-      label: t('Total Applications', 'إجمالي الطلبات'),
-      value: applications.length,
-      icon: Users,
-      color: 'bg-emerald-50 text-emerald-600',
-    },
+    ...(isAdmin
+      ? [
+          {
+            label: t('Total Applications', 'إجمالي الطلبات'),
+            value: applications.length,
+            icon: Users,
+            color: 'bg-emerald-50 text-emerald-600',
+          },
+        ]
+      : []),
     {
       label: t('Published News', 'الأخبار المنشورة'),
       value: publishedCount,
@@ -510,8 +532,8 @@ function OverviewTab() {
         })}
       </div>
 
-      {/* Recent applications */}
-      <motion.div
+      {/* Recent applications (admin only — PII) */}
+      {isAdmin && <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
@@ -566,7 +588,7 @@ function OverviewTab() {
             )}
           </CardContent>
         </Card>
-      </motion.div>
+      </motion.div>}
     </div>
   );
 }

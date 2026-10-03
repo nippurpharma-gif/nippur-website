@@ -1,24 +1,37 @@
+import { randomBytes } from 'crypto';
 import { type AuthOptions, getServerSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword } from '@/lib/password';
 import { rateLimit } from '@/lib/rate-limit';
+import { trustProxyHeaders } from '@/lib/request-security';
 import { ensureAuthUrl } from '@/lib/site-url';
 
 ensureAuthUrl();
+
+const ADMIN_ROLES = new Set(['admin', 'editor']);
+
+/** Ephemeral secret for a single local process — never a hardcoded forgeable value. */
+let ephemeralDevSecret: string | undefined;
 
 function resolveAuthSecret(): string | undefined {
   const fromEnv = process.env.NEXTAUTH_SECRET?.trim();
   if (fromEnv) return fromEnv;
 
-  if (process.env.NODE_ENV === 'production') {
+  const isProd = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1';
+  if (isProd) {
     console.error('[auth] NEXTAUTH_SECRET is required in production');
     return undefined;
   }
 
-  console.warn('[auth] Using development fallback NEXTAUTH_SECRET');
-  return 'dev-only-nippur-secret-change-me';
+  if (!ephemeralDevSecret) {
+    ephemeralDevSecret = randomBytes(32).toString('hex');
+    console.warn(
+      '[auth] NEXTAUTH_SECRET missing — using ephemeral in-memory secret for this process. Set NEXTAUTH_SECRET in .env.local.',
+    );
+  }
+  return ephemeralDevSecret;
 }
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -48,15 +61,20 @@ export const authOptions: AuthOptions = {
         const password = credentials?.password;
         if (!email || !password) return null;
 
-        const headerBag = req && 'headers' in req ? req.headers : undefined;
-        const forwarded =
-          headerBag && typeof (headerBag as Headers).get === 'function'
-            ? (headerBag as Headers).get('x-forwarded-for')
-            : (headerBag as Record<string, string | string[] | undefined> | undefined)?.[
-                'x-forwarded-for'
-              ];
-        const ipRaw = Array.isArray(forwarded) ? forwarded[0] : forwarded;
-        const ip = ipRaw?.split(',')[0]?.trim() || 'unknown';
+        let ip = 'unknown';
+        if (trustProxyHeaders()) {
+          const headerBag = req && 'headers' in req ? req.headers : undefined;
+          const getHeader = (name: string): string | null => {
+            if (!headerBag) return null;
+            if (typeof (headerBag as Headers).get === 'function') {
+              return (headerBag as Headers).get(name);
+            }
+            const raw = (headerBag as Record<string, string | string[] | undefined>)[name];
+            return Array.isArray(raw) ? raw[0] ?? null : raw ?? null;
+          };
+          const forwarded = getHeader('cf-connecting-ip') || getHeader('x-real-ip') || getHeader('x-forwarded-for');
+          ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+        }
 
         try {
           const limited = await withTimeout(
@@ -70,6 +88,10 @@ export const authOptions: AuthOptions = {
           if (!limited.ok) return null;
         } catch (error) {
           console.error('[auth] rate limit failed', error);
+          // Fail closed in production so brute-force protection never silently drops.
+          if (process.env.NODE_ENV === 'production' || process.env.VERCEL === '1') {
+            return null;
+          }
         }
 
         let user;
@@ -121,11 +143,11 @@ export async function getAdminSession() {
   return getServerSession(authOptions);
 }
 
-/** Returns 401 JSON when the caller is not an authenticated admin. */
+/** Returns 401 JSON when the caller is not an authenticated admin or editor. */
 export async function requireAdmin() {
   const session = await getAdminSession();
-  const role = session?.user?.role;
-  if (!session?.user || (role && role !== 'admin' && role !== 'editor')) {
+  const role = session?.user?.role ?? '';
+  if (!session?.user || !ADMIN_ROLES.has(role)) {
     return {
       session: null,
       error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),

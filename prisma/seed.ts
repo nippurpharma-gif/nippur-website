@@ -114,7 +114,11 @@ async function main() {
       });
       console.log(`Seeded admin user: ${email}`);
     }
-  } else if (process.env.NODE_ENV !== 'production') {
+  } else if (
+    process.env.ALLOW_DEV_SEED === '1' &&
+    process.env.NODE_ENV !== 'production' &&
+    process.env.VERCEL !== '1'
+  ) {
     const existing = await db.adminUser.findUnique({ where: { email } });
     if (!existing) {
       await db.adminUser.create({
@@ -126,8 +130,14 @@ async function main() {
           isActive: true,
         },
       });
-      console.warn('Seeded dev admin admin@nippurpharma.iq / ChangeMeNow1 — change immediately.');
+      console.warn(
+        'Seeded dev admin admin@nippurpharma.iq / ChangeMeNow1 — change immediately. (ALLOW_DEV_SEED=1)',
+      );
     }
+  } else if (!password) {
+    console.warn(
+      'Skipped admin seed: set ADMIN_PASSWORD (>=10 chars) or ALLOW_DEV_SEED=1 for local default.',
+    );
   }
 
   const count = await db.product.count();

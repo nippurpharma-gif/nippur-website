@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { z } from 'zod';
 import { mediaUrlSchema } from '@/lib/validation';
 import { parseProductionStats } from '@/lib/production-stats';
@@ -76,7 +76,7 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {

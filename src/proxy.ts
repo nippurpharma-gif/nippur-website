@@ -1,6 +1,7 @@
 import { getToken } from 'next-auth/jwt';
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureAuthUrl } from '@/lib/site-url';
+import { isSameOriginRequest } from '@/lib/request-security';
 
 ensureAuthUrl();
 
@@ -14,6 +15,8 @@ const PUBLIC_GET = new Set([
 ]);
 
 const PUBLIC_POST = new Set(['/api/applications', '/api/contact']);
+
+const ADMIN_ROLES = new Set(['admin', 'editor']);
 
 function normalizePath(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -30,12 +33,15 @@ function loginRedirect(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+function isNextAuthRoute(pathname: string): boolean {
+  return pathname === '/api/auth' || pathname.startsWith('/api/auth/');
+}
+
 export async function proxy(req: NextRequest) {
   const pathname = normalizePath(req.nextUrl.pathname);
   const isApi = pathname.startsWith('/api/');
-  const isAuthRoute = pathname.startsWith('/api/auth');
 
-  if (isAuthRoute) {
+  if (isNextAuthRoute(pathname)) {
     return NextResponse.next();
   }
 
@@ -49,8 +55,11 @@ export async function proxy(req: NextRequest) {
       forwardedProto === 'https',
   });
 
-  if (pathname.startsWith('/admin') && !token) {
-    return loginRedirect(req);
+  if (pathname.startsWith('/admin')) {
+    if (!token) return loginRedirect(req);
+    const role = typeof token.role === 'string' ? token.role : '';
+    if (!ADMIN_ROLES.has(role)) return loginRedirect(req);
+    return NextResponse.next();
   }
 
   if (isApi) {
@@ -66,6 +75,12 @@ export async function proxy(req: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+      if (!isSameOriginRequest(req)) {
+        return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+      }
+    }
   }
 
   return NextResponse.next();
@@ -74,5 +89,5 @@ export async function proxy(req: NextRequest) {
 export default proxy;
 
 export const config = {
-  matcher: ['/admin', '/admin/:path*', '/api/((?!auth).*)'],
+  matcher: ['/admin', '/admin/:path*', '/api/:path*'],
 };

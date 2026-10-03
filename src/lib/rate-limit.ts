@@ -2,7 +2,10 @@
  * Sliding-window rate limiter.
  * Uses Upstash Redis when UPSTASH_REDIS_REST_URL + TOKEN are set (multi-instance).
  * Falls back to in-memory for local / single-instance deploys.
+ * Production multi-instance: set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN.
  */
+
+import { trustProxyHeaders } from '@/lib/request-security';
 
 type Result = { ok: true } | { ok: false; retryAfterSec: number };
 
@@ -84,6 +87,9 @@ export async function rateLimit(
 }
 
 export function clientIp(request: Request): string {
+  if (!trustProxyHeaders()) {
+    return 'unknown';
+  }
   const cf = request.headers.get('cf-connecting-ip');
   if (cf) return cf.trim();
   const real = request.headers.get('x-real-ip');

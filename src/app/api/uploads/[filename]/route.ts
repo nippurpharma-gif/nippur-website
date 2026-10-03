@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
 const ALLOWED_EXT = new Set(['.pdf', '.doc', '.docx']);
 
@@ -9,7 +9,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ filename: string }> },
 ) {
-  const { error } = await requireAdmin();
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {

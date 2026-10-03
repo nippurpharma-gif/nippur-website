@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { parseListQuery } from '@/lib/pagination';
 
@@ -51,7 +51,7 @@ const updateSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {
@@ -61,7 +61,9 @@ export async function GET(request: NextRequest) {
       take,
       skip,
     });
-    return NextResponse.json(applications);
+    // Never expose absolute server filesystem paths to clients.
+    const safe = applications.map(({ cvFilePath: _path, ...rest }) => rest);
+    return NextResponse.json(safe);
   } catch {
     return NextResponse.json({ error: 'Failed to fetch applications' }, { status: 500 });
   }
@@ -155,7 +157,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {

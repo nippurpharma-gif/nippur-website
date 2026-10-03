@@ -4,11 +4,16 @@ import type { NewsArticlePublic } from '@/lib/news';
 import type { JobPublic } from '@/lib/jobs';
 import { ENTITY_KEYWORDS_EN } from '@/lib/seo';
 
+function safeJsonLd(data: Record<string, unknown> | Record<string, unknown>[]): string {
+  // Prevent </script> breakout from admin-controlled strings inside JSON-LD.
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
 function JsonLdScript({ data }: { data: Record<string, unknown> | Record<string, unknown>[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(data) }}
     />
   );
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { requireAdmin } from '@/lib/auth';
+import { requireRole } from '@/lib/auth';
 
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 /** SVG banned — same-origin SVG can execute scripts (stored XSS). */
@@ -26,7 +26,7 @@ function sniffImageMime(buf: Buffer): string | null {
 }
 
 export async function POST(request: NextRequest) {
-  const { error } = await requireAdmin();
+  const { error } = await requireRole(['admin']);
   if (error) return error;
 
   try {
