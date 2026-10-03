@@ -14,7 +14,7 @@ const PUBLIC_GET = new Set([
   '/api/products',
 ]);
 
-const PUBLIC_POST = new Set(['/api/applications', '/api/contact']);
+const PUBLIC_POST = new Set(['/api/applications', '/api/contact', '/api/newsletter']);
 
 const ADMIN_ROLES = new Set(['admin', 'editor']);
 

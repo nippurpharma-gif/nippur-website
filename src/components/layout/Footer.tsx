@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { ArrowUp, ArrowUpRight } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { useSiteSettings } from '@/hooks/use-site-settings';
 import { motionTransition } from '@/lib/motion-craft';
@@ -14,6 +14,7 @@ import {
   type ManagedSectionKey,
 } from '@/lib/homepage-sections';
 import { gsap, useGSAP, prefersReducedMotion, revealOnScroll, SCROLL } from '@/lib/gsap-site';
+import { NewsletterForm } from '@/components/sections/NewsletterForm';
 
 function fitWordmark(el: HTMLElement, container: HTMLElement) {
   const target = container.clientWidth;
@@ -138,30 +139,7 @@ export function Footer() {
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-8">
               {t.footer.newsletter}
             </h2>
-            <form
-              className="flex items-center gap-3 max-w-md"
-              onSubmit={(e) => e.preventDefault()}
-            >
-              <label className="flex-1 min-w-0">
-                <span className="sr-only">{t.footer.emailPlaceholder}</span>
-                <input
-                  type="email"
-                  required
-                  placeholder={t.footer.emailPlaceholder}
-                  className="w-full bg-transparent border-0 border-b border-white/40 pb-2 text-sm text-white placeholder:text-white/45 outline-none focus:border-white transition-colors"
-                />
-              </label>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/30 bg-black/40 backdrop-blur-xs text-white hover:bg-white hover:text-brand-900 text-xs sm:text-sm font-medium transition-all duration-200 group shrink-0"
-              >
-                <span>{t.footer.subscribe}</span>
-                <ArrowUpRight className="size-4 text-brand-200 group-hover:text-brand-900 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-200 rtl:rotate-[-90deg]" />
-              </button>
-            </form>
-            <p className="mt-4 text-xs text-white/45 max-w-sm leading-relaxed">
-              {t.footer.newsletterDesc}
-            </p>
+            <NewsletterForm />
           </div>
 
           <nav
