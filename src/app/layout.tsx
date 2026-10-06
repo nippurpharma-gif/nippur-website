@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, IBM_Plex_Mono, Cairo } from 'next/font/google';
 import { cookies } from 'next/headers';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { SonnerToaster } from '@/components/ui/sonner';
@@ -73,6 +74,24 @@ export default async function RootLayout({
         </AppProvider>
         <Toaster />
         <SonnerToaster />
+        <Analytics
+          beforeSend={(event) => {
+            // Keep Vercel Analytics focused on public traffic.
+            try {
+              const path = new URL(event.url).pathname;
+              if (
+                path.startsWith('/admin') ||
+                path.startsWith('/login') ||
+                path.startsWith('/api/')
+              ) {
+                return null;
+              }
+            } catch {
+              return event;
+            }
+            return event;
+          }}
+        />
       </body>
     </html>
   );
