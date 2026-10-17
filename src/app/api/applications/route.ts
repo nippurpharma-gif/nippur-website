@@ -155,9 +155,18 @@ export async function POST(request: NextRequest) {
     console.error('Application error:', err);
     const message = err instanceof Error ? err.message : 'Failed to submit application';
     const isConfig =
-      message.includes('BLOB_READ_WRITE_TOKEN') || message.includes('not writable');
+      message.includes('BLOB_READ_WRITE_TOKEN') ||
+      message.includes('Blob store') ||
+      message.includes('private store') ||
+      message.includes('public access');
     return NextResponse.json(
-      { error: isConfig ? message : 'Failed to submit application' },
+      {
+        error: isConfig
+          ? message
+          : process.env.NODE_ENV === 'production'
+            ? 'Failed to submit application'
+            : message,
+      },
       { status: isConfig ? 503 : 500 },
     );
   }

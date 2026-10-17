@@ -1,7 +1,7 @@
 import { mkdir, writeFile, readFile } from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import { put } from '@vercel/blob';
+import { get, put } from '@vercel/blob';
 
 export type StoredCv = {
   fileName: string;
@@ -11,12 +11,16 @@ export type StoredCv = {
 };
 
 function useBlobStorage(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN?.trim() ||
+      (process.env.VERCEL === '1' && process.env.BLOB_STORE_ID?.trim()),
+  );
 }
 
 /**
- * Persist a CV. Uses Vercel Blob when BLOB_READ_WRITE_TOKEN is set
- * (required on Vercel — local disk is read-only). Falls back to ./uploads in local/dev.
+ * Persist a CV.
+ * - On Vercel / when Blob credentials exist: Vercel Blob (private store).
+ * - Locally without Blob: ./uploads
  */
 export async function storeCvFile(
   bytes: Buffer,
@@ -30,8 +34,10 @@ export async function storeCvFile(
   }`;
 
   if (useBlobStorage()) {
-    const blob = await put(`cvs/${fileName}`, bytes, {
-      access: 'public',
+    const body = new Blob([bytes], { type: contentType });
+    const blob = await put(`cvs/${fileName}`, body, {
+      // Store is private — public access throws and becomes HTTP 500.
+      access: 'private',
       contentType,
       addRandomSuffix: false,
     });
@@ -40,7 +46,7 @@ export async function storeCvFile(
 
   if (process.env.VERCEL === '1') {
     throw new Error(
-      'BLOB_READ_WRITE_TOKEN is required on Vercel to store CV uploads (local disk is not writable).',
+      'BLOB_READ_WRITE_TOKEN (or connected Blob store) is required on Vercel to store CV uploads.',
     );
   }
 
@@ -53,11 +59,12 @@ export async function storeCvFile(
 
 export async function readCvFile(filePath: string): Promise<Buffer> {
   if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-    const res = await fetch(filePath, { cache: 'no-store' });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch CV blob (${res.status})`);
+    const result = await get(filePath, { access: 'private' });
+    if (!result) {
+      throw new Error('CV blob not found');
     }
-    return Buffer.from(await res.arrayBuffer());
+    const ab = await new Response(result.stream).arrayBuffer();
+    return Buffer.from(ab);
   }
 
   const resolved = path.resolve(filePath);
