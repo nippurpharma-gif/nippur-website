@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import { requireRole } from '@/lib/auth';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { parseListQuery } from '@/lib/pagination';
+import { storeCvFile } from '@/lib/cv-storage';
 
 const MAX_CV_SIZE = 5 * 1024 * 1024;
 const ALLOWED_CV_MIME = new Set([
@@ -14,9 +14,12 @@ const ALLOWED_CV_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 const ALLOWED_CV_EXT = new Set(['.pdf', '.doc', '.docx']);
+/** Browsers often send this for PDFs — do not reject before magic-byte sniff. */
+const PASSTHROUGH_MIME = new Set(['', 'application/octet-stream', 'binary/octet-stream']);
 
 function sniffCvMime(buf: Buffer, ext: string): string | null {
-  if (buf.length >= 5 && buf.subarray(0, 5).toString('ascii') === '%PDF-') {
+  const head = buf.subarray(0, Math.min(1024, buf.length)).toString('latin1');
+  if (head.includes('%PDF-')) {
     return 'application/pdf';
   }
   // OLE Compound File (legacy .doc)
@@ -61,7 +64,7 @@ export async function GET(request: NextRequest) {
       take,
       skip,
     });
-    // Never expose absolute server filesystem paths to clients.
+    // Never expose absolute server filesystem paths / storage URLs to clients.
     const safe = applications.map(({ cvFilePath: _path, ...rest }) => rest);
     return NextResponse.json(safe);
   } catch {
@@ -101,8 +104,6 @@ export async function POST(request: NextRequest) {
     }
 
     const cvFile = formData.get('cv') as File | null;
-    let cvFileName = '';
-    let cvFilePath = '';
 
     if (!cvFile || cvFile.size <= 0) {
       return NextResponse.json({ error: 'CV is required' }, { status: 400 });
@@ -117,7 +118,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
     }
 
-    if (cvFile.type && !ALLOWED_CV_MIME.has(cvFile.type)) {
+    const declaredType = (cvFile.type || '').toLowerCase();
+    if (
+      declaredType &&
+      !PASSTHROUGH_MIME.has(declaredType) &&
+      !ALLOWED_CV_MIME.has(declaredType)
+    ) {
       return NextResponse.json({ error: 'CV must be PDF or Word document' }, { status: 400 });
     }
 
@@ -127,12 +133,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CV file content is invalid' }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), 'uploads');
-    await mkdir(uploadDir, { recursive: true });
-    const safeBase = cvFile.name.replace(/[^a-zA-Z0-9.-]/g, '_').slice(0, 80);
-    cvFileName = `${Date.now()}-${safeBase.endsWith(ext) ? safeBase : `${safeBase}${ext}`}`;
-    cvFilePath = path.join(uploadDir, cvFileName);
-    await writeFile(cvFilePath, bytes);
+    const stored = await storeCvFile(bytes, cvFile.name, sniffed);
 
     const { fullName, email, phone, position, department, coverLetter } = parsed.data;
 
@@ -143,8 +144,8 @@ export async function POST(request: NextRequest) {
         phone: phone || '',
         position,
         department: department || '',
-        cvFileName,
-        cvFilePath,
+        cvFileName: stored.fileName,
+        cvFilePath: stored.filePath,
         coverLetter: coverLetter || '',
       },
     });
@@ -152,7 +153,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: application.id, success: true }, { status: 201 });
   } catch (err) {
     console.error('Application error:', err);
-    return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 });
+    const message = err instanceof Error ? err.message : 'Failed to submit application';
+    const isConfig =
+      message.includes('BLOB_READ_WRITE_TOKEN') || message.includes('not writable');
+    return NextResponse.json(
+      { error: isConfig ? message : 'Failed to submit application' },
+      { status: isConfig ? 503 : 500 },
+    );
   }
 }
 

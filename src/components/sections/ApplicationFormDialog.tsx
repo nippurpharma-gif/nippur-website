@@ -188,7 +188,38 @@ export function ApplicationFormDialog({
           body: formData,
         });
 
-        if (!res.ok) throw new Error('Submission failed');
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+
+        if (!res.ok) {
+          const serverMsg = data.error?.trim();
+          if (serverMsg === 'CV is required') {
+            setCvError(labels.cvRequired);
+            toast.error(labels.cvRequired, { duration: 5000 });
+            return;
+          }
+          if (serverMsg === 'CV file content is invalid' || serverMsg?.includes('PDF or Word')) {
+            const msg =
+              locale === 'ar'
+                ? 'ملف السيرة غير صالح. استخدم PDF أو Word حقيقياً.'
+                : 'Invalid CV file. Please upload a real PDF or Word document.';
+            setCvError(msg);
+            toast.error(msg, { duration: 5000 });
+            return;
+          }
+          if (serverMsg === 'CV too large (max 5MB)') {
+            const msg =
+              locale === 'ar' ? 'حجم الملف يتجاوز 5 ميجابايت.' : 'File size exceeds 5MB limit.';
+            setCvError(msg);
+            toast.error(msg, { duration: 5000 });
+            return;
+          }
+          if (serverMsg === 'Invalid application data') {
+            toast.error(labels.requiredFields);
+            return;
+          }
+          toast.error(serverMsg || labels.error, { duration: 6000 });
+          return;
+        }
 
         toast.success(labels.success, { duration: 6000 });
         resetForm();
@@ -208,6 +239,7 @@ export function ApplicationFormDialog({
       coverLetter,
       selectedFile,
       labels,
+      locale,
       onOpenChange,
       resetForm,
     ]
